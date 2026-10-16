@@ -9,6 +9,10 @@ The launcher resumes native sessions and carries shared project notes and recent
 conversation context between Codex, Claude Code, and GitHub Copilot CLI. You can
 also ask an agent for a progress summary and a clearer project name.
 
+![Agent Project Launchpad picker showing projects, lifecycle status, agent switching, and keyboard controls](docs/preview.png)
+
+*The actual picker renderer with fictional demo projects.*
+
 ## Install and enable
 
 Requires macOS or Linux, Python 3.10+, and at least one agent already installed.

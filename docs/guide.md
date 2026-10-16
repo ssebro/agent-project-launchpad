@@ -234,3 +234,11 @@ synthetic session fixtures; never upload actual conversation history.
 Anthropic, or GitHub. Product names belong to their respective owners.
 
 The previous `agent-projects` command and `AGENT_PROJECTS_HOME` setting remain supported. Existing state in the former default directory is reused automatically.
+
+## Refresh the README preview
+
+On macOS, run `PYTHONPATH=src python3 docs/tools/capture_preview.py` from the
+checkout. This uses the actual picker renderer and disposable demo data, then
+rasterizes terminal cells with the system monospace font at 2× resolution.
+The README embeds the PNG with its natural aspect ratio. Swift is needed only
+to regenerate this documentation image.
