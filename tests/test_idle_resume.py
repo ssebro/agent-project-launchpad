@@ -234,7 +234,7 @@ class IdleResumeTests(unittest.TestCase):
                     codex(config.codex, [('source', 'Old name', folder, 100, None, 0, None)])
                     catalog = Catalog(config)
                     project = catalog.find('codex:source')
-                    def run(args, **_kwargs):
+                    def run(args, agent=agent, config=config, folder=folder, **_kwargs):
                         if agent == 'claude':
                             file = claude(config.claude, args[2], Path(folder))
                             events = [dict(type='user', cwd=folder, sessionId=args[2],
