@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_launchpad.integration import END, START, configure, shell_name, startup_file
+from agent_launchpad.integration import START, configure, shell_name, startup_file
 
 
 class SetupTests(unittest.TestCase):

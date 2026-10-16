@@ -84,7 +84,13 @@ def run(args: argparse.Namespace) -> int:
         print(shell_init(args.launcher))
         return 0
     if args.command in ('setup', 'uninstall-shell', 'check-shell'):
-        from .integration import check_shell, configure, installed_launcher, shell_name, startup_file
+        from .integration import (
+            check_shell,
+            configure,
+            installed_launcher,
+            shell_name,
+            startup_file,
+        )
 
         shell = shell_name(args.shell)
         if args.command == 'check-shell':
