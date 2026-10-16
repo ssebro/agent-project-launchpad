@@ -135,8 +135,8 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     screen.erase()
     paint = Painter(screen)
     height, width = paint.height, paint.width
-    paint.write(0, 1, "agent launchpad", theme.accent)
-    paint.write(0, max(18, width - 29), f"{agent.upper()}{'' if available else ' unavailable'}", theme.accent)
+    paint.write(0, 1, "Agent Project Launchpad", theme.accent)
+    paint.write(0, max(25, width - 29), f"{agent.upper()}{'' if available else ' unavailable'}", theme.accent)
     paint.write(1, max(18, width - 29), ' Tab ', theme.key)
     paint.write(1, max(18, width - 29) + 6, 'switch agent', theme.muted)
     paint.write(2, 1, " / ", theme.key if searching else theme.accent)

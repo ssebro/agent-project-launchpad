@@ -204,7 +204,7 @@ need separate agent configuration as well as separate launcher data directories.
 ## Uninstall
 
 Run `agent-launchpad uninstall-shell` and open a new shell,
-then run `pipx uninstall agent-launchpad` (or delete your dedicated virtual
+then run `pipx uninstall agent-project-launchpad` (or delete your dedicated virtual
 environment). Your native sessions are unaffected. Launcher data is deliberately
 retained; remove its data directory separately if you no longer want the notes.
 

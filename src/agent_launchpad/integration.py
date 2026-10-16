@@ -158,8 +158,8 @@ def check_shell(shell: str) -> dict[str, bool]:
                            ('copilot', 'copilot'), ('gh', 'copilot')]:
         checks.append(
             f'case "$(typeset -f {command} 2>/dev/null)" in '
-            f'*"--agent {agent}"*) printf "AGENT_PROJECTS_CHECK:{command}:ok\\n";; '
-            f'*) printf "AGENT_PROJECTS_CHECK:{command}:missing\\n";; esac'
+            f'*"--agent {agent}"*) printf "AGENT_LAUNCHPAD_CHECK:{command}:ok\\n";; '
+            f'*) printf "AGENT_LAUNCHPAD_CHECK:{command}:missing\\n";; esac'
         )
     args = [binary, '-lic' if shell == 'bash' and sys.platform == 'darwin' else '-ic',
             '\n'.join(checks)]
@@ -169,7 +169,7 @@ def check_shell(shell: str) -> dict[str, bool]:
         raise ValueError('Shell startup did not finish within 15 seconds; check your shell startup files') from exc
     output = {}
     for line in result.stdout.splitlines():
-        if line.startswith('AGENT_PROJECTS_CHECK:'):
+        if line.startswith('AGENT_LAUNCHPAD_CHECK:'):
             _, command, status = line.split(':', 2)
             output[command] = status == 'ok'
     return {command: output.get(command, False) for command in ('codex', 'claude', 'copilot', 'gh')}

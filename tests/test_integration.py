@@ -38,7 +38,7 @@ with (home.parent / 'calls.jsonl').open('a') as stream:
                 **os.environ,
                 "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
                 "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
-                "AGENT_PROJECTS_HOME": str(config.data),
+                "AGENT_LAUNCHPAD_HOME": str(config.data),
                 "CODEX_HOME": str(config.codex),
                 "CLAUDE_CONFIG_DIR": str(config.claude),
                 "COPILOT_HOME": str(root / "copilot"),
