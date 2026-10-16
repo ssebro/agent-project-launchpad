@@ -40,6 +40,7 @@ def fit(text: str, width: int, pad: bool = False) -> str:
 class Selection:
     agent: str
     project: Project | None = None
+    action: str = 'resume'
 
 
 @dataclass(frozen=True)
@@ -173,11 +174,15 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
         paint.write(preview_y + 1, 1, item.title, curses.A_BOLD)
         paint.write(preview_y + 2, 1, str(item.directory or "Directory not recorded"), theme.muted)
         native = " · ".join(item.sessions) or "No native session"
-        paint.write(preview_y + 3, 1, "History: " + native + "  |  " + (item.detail or item.status),
-                    theme.status(item.status))
+        if item.summary:
+            prefix = 'Review may be stale: ' if item.summary_stale else 'Summary: '
+            paint.write(preview_y + 3, 1, prefix + item.summary, theme.muted)
+        else:
+            paint.write(preview_y + 3, 1, "History: " + native + "  |  " + (item.detail or item.status),
+                        theme.status(item.status))
     paint.keys(height - 4, [("n", "new"), ("Enter", "resume"), ("↑↓", "move"),
                             ("/", "search"), ("q", "quit")], theme)
-    paint.keys(height - 3, [("c", "complete/reopen"), ("a", "archive"), ("r", "rename"),
+    paint.keys(height - 3, [("s", "summary"), ("c", "done/open"), ("a", "archive"), ("r", "rename"),
                             ("u", "undo"), ("?", "help")], theme)
     message_style = theme.warning if message.startswith("Forget this project?") else theme.muted
     paint.write(height - 2, 1, message or "Active automatically · c completes/reopens · a archives", message_style)
@@ -261,7 +266,9 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
         elif key == "/":
             searching = True
         elif key == "?":
-            notice = "c complete/reopen · a archive · u undo archive · Tab switches tool · Esc clears"
+            notice = "s summary + names · c done/open · a archive · u undo · Tab switches tool"
+        elif key == 's' and project:
+            return Selection(agent, project, 'review')
         elif key == "u":
             restored = catalog.store.restore()
             projects = catalog.load()
@@ -272,7 +279,7 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
             catalog.forget(project)
             projects = catalog.load()
             notice = "Archived. Press u to restore. Native history is unchanged."
-        elif key in ("c", "s") and project:
+        elif key == 'c' and project:
             catalog.toggle_completed(project)
             projects = catalog.load()
             notice = "Marked active." if project.status == "Completed" else "Marked completed."

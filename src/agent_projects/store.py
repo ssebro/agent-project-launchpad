@@ -62,6 +62,17 @@ class Store:
                 for k, v in updates.items()
             ):
                 raise ValueError(f"Invalid completion baseline in {path}")
+            reviewed = project.get('review_source_updates', {})
+            if not isinstance(reviewed, dict) or any(
+                not isinstance(k, str) or not isinstance(v, (int, float))
+                for k, v in reviewed.items()
+            ):
+                raise ValueError(f"Invalid summary baseline in {path}")
+            if not isinstance(project.get('reviewed_at', 0), (float, int)):
+                raise ValueError(f"Invalid review timestamp in {path}")
+        review_sessions = state.get('review_sessions', [])
+        if not isinstance(review_sessions, list) or any(not isinstance(i, str) for i in review_sessions):
+            raise ValueError(f"Invalid generated-review session list in {path}")
         return state
 
     @contextmanager

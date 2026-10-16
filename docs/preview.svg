@@ -55,20 +55,23 @@
 <text x="412" y="392" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> q </text>
 <text x="436" y="392" fill="#e5e7eb" textLength="448" lengthAdjust="spacingAndGlyphs"> quit                                                   </text>
 <rect x="28" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
-<text x="28" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> c </text>
-<text x="52" y="413" fill="#e5e7eb" textLength="144" lengthAdjust="spacingAndGlyphs"> complete/reopen  </text>
-<rect x="196" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
-<text x="196" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> a </text>
-<text x="220" y="413" fill="#e5e7eb" textLength="80" lengthAdjust="spacingAndGlyphs"> archive  </text>
-<rect x="300" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
-<text x="300" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> r </text>
-<text x="324" y="413" fill="#e5e7eb" textLength="72" lengthAdjust="spacingAndGlyphs"> rename  </text>
-<rect x="396" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
-<text x="396" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> u </text>
-<text x="420" y="413" fill="#e5e7eb" textLength="56" lengthAdjust="spacingAndGlyphs"> undo  </text>
-<rect x="476" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
-<text x="476" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> ? </text>
-<text x="500" y="413" fill="#e5e7eb" textLength="384" lengthAdjust="spacingAndGlyphs"> help                                           </text>
+<text x="28" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> s </text>
+<text x="52" y="413" fill="#e5e7eb" textLength="80" lengthAdjust="spacingAndGlyphs"> summary  </text>
+<rect x="132" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
+<text x="132" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> c </text>
+<text x="156" y="413" fill="#e5e7eb" textLength="96" lengthAdjust="spacingAndGlyphs"> done/open  </text>
+<rect x="252" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
+<text x="252" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> a </text>
+<text x="276" y="413" fill="#e5e7eb" textLength="80" lengthAdjust="spacingAndGlyphs"> archive  </text>
+<rect x="356" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
+<text x="356" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> r </text>
+<text x="380" y="413" fill="#e5e7eb" textLength="72" lengthAdjust="spacingAndGlyphs"> rename  </text>
+<rect x="452" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
+<text x="452" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> u </text>
+<text x="476" y="413" fill="#e5e7eb" textLength="56" lengthAdjust="spacingAndGlyphs"> undo  </text>
+<rect x="532" y="398" width="24" height="21" rx="2" fill="#67e8f9"/>
+<text x="532" y="413" fill="#10232e" textLength="24" lengthAdjust="spacingAndGlyphs"> ? </text>
+<text x="556" y="413" fill="#e5e7eb" textLength="328" lengthAdjust="spacingAndGlyphs"> help                                    </text>
 <text x="28" y="434" fill="#9ca3af" textLength="440" lengthAdjust="spacingAndGlyphs">Active automatically · c completes/reopens · a archives</text>
 </g>
 </svg>

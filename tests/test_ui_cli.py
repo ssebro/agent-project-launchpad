@@ -88,6 +88,12 @@ class UITests(unittest.TestCase):
         result = self.choose(['u', '\n'])
         self.assertEqual(result.project.id, 'codex:one')
 
+    def test_summary_shortcut_does_not_change_lifecycle(self):
+        result = self.choose(['s'])
+        self.assertEqual(result.action, 'review')
+        self.assertEqual(result.project.status, 'Active')
+        self.assertEqual(self.catalog.find(result.project.id).status, 'Active')
+
     def test_empty_small_and_narrow_screens(self):
         for project in self.catalog.load():
             self.catalog.forget(project)

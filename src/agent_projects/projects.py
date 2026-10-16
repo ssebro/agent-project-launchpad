@@ -30,6 +30,8 @@ class Catalog:
                       discover_copilot(self.paths.copilot)):
             self.warnings.extend(found.warnings)
             for session in found.sessions:
+                if session.key in state.get('review_sessions', []):
+                    continue
                 project_id = owners.get(session.key, session.key)
                 record = records.get(project_id, {})
                 if project_id not in projects:
@@ -57,10 +59,18 @@ class Catalog:
             if project.hidden:
                 project.status = "Archived"
             project.detail = str(record.get("status") or "")
+            project.summary = str(record.get('summary') or '')
+            reviewed = record.get('review_source_updates', {})
+            project.summary_stale = bool(project.summary) and any(
+                session.updated > reviewed.get(session.key, -1)
+                for session in project.sessions.values()
+            )
             handoff = self.store.handoff(project.id)
             try:
                 if handoff.exists():
                     project.updated = max(project.updated, handoff.stat().st_mtime)
+                    if project.summary and handoff.stat().st_mtime > record.get('reviewed_at', 0):
+                        project.summary_stale = True
                     for line in handoff.read_text(encoding="utf-8").splitlines():
                         if line.startswith("Status: "):
                             project.detail = line[8:].strip()

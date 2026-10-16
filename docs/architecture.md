@@ -22,6 +22,7 @@ Local metadata + Markdown handoffs ───────────────
 | `store.py` | Versioned metadata transactions, private files, handoff paths |
 | `projects.py` | Join explicit native links and handoffs into the project list |
 | `launch.py` | Build native argument lists, start tools, associate new sessions |
+| `review.py` | Extract bounded dialogue, request agent suggestions, save accepted reviews |
 | `ui.py` | Keyboard interactions and terminal layout |
 | `cli.py` | Parse commands, print shell integration, report errors |
 
@@ -80,3 +81,20 @@ environment path resolution and tool selection, and add synthetic fixture tests.
 Verify both a fresh launch and native resume against current official CLI help.
 Document the format and tested versions. Do not add a new runtime dependency just
 to parse an incidental metadata file if the event log already contains the data.
+
+## On-demand review
+
+The summary action exits curses temporarily, invokes the selected agent in a new
+review context, and presents the result before saving. It never resumes the source
+session to generate a review. Evidence includes up to 8,000 handoff characters and
+up to two recent native transcripts, each limited to 10,000 characters of extracted
+user/assistant text. Tool results and reasoning blocks are excluded. No local
+program can guarantee a model will ignore malicious instructions in evidence;
+tool restrictions and isolation reduce the available actions.
+
+Validated suggestions are displayed first. On acceptance, the summary and optional
+selected name are stored, and a marked review block is added to the shared handoff
+without replacing other notes. Native update baselines and handoff mtime track
+whether a saved summary may be stale. Summaries do not control lifecycle. Copilot's
+separate review-session IDs are kept in metadata so its generated review history
+does not clutter the project list; native files are not deleted.

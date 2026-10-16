@@ -30,6 +30,8 @@ class Project:
     sessions: dict[str, Session] = field(default_factory=dict)
     hidden: bool = False
     detail: str = ""
+    summary: str = ""
+    summary_stale: bool = False
 
 
 @dataclass

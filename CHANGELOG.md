@@ -6,6 +6,8 @@
 - Resume native sessions with per-project shared Markdown handoffs.
 - Search, rename, switch tools, complete/reopen, and archive/restore from the keyboard.
 - Automatic Active lifecycle; new native activity reopens completed projects.
+- On-demand agent summaries, next steps, and suggested names with explicit review
+  before saving, plus stale-summary detection.
 - Optional bash/zsh wrappers for bare `codex`, `claude`, `copilot`, and `gh copilot`.
 - Standard-library runtime, versioned private local metadata, atomic writes, and
   process locks. Native histories remain read-only.

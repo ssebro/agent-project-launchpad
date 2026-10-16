@@ -3,6 +3,7 @@
 import argparse
 import json
 import shutil
+import subprocess
 import sys
 from dataclasses import asdict, replace
 from datetime import datetime
@@ -40,6 +41,9 @@ def parser() -> argparse.ArgumentParser:
     handoff.add_argument("id")
     resume = commands.add_parser("resume", help="Resume a project by its ID or unique ID prefix")
     resume.add_argument("id")
+    review = commands.add_parser('review', help='Ask the selected agent for a summary and suggested names')
+    review.add_argument('id')
+    review.add_argument('--json', action='store_true', help='Print suggestions without applying them')
     return root
 
 
@@ -95,7 +99,7 @@ def run(args: argparse.Namespace) -> int:
     elif args.command == "restore":
         project_id = catalog.find(args.id).id if args.id else None
         print(catalog.store.restore(project_id) or "Nothing to restore.")
-    elif args.command in ("set", "forget", "handoff", "resume"):
+    elif args.command in ("set", "forget", "handoff", "resume", 'review'):
         project = catalog.find(args.id)
         if args.command == "set":
             if args.name is None and args.status is None:
@@ -106,6 +110,13 @@ def run(args: argparse.Namespace) -> int:
             print("Forgotten. Native history is unchanged; use restore to undo.")
         elif args.command == "handoff":
             print(catalog.prepare(project))
+        elif args.command == 'review':
+            from .review import generate, interactive_review
+
+            if args.json:
+                print(json.dumps(asdict(generate(catalog, project, args.agent)), indent=2))
+            else:
+                interactive_review(catalog, project, args.agent)
         else:
             return launch(catalog, project, args.agent)
     else:
@@ -115,9 +126,17 @@ def run(args: argparse.Namespace) -> int:
 
         from .ui import choose
 
-        selection = curses.wrapper(choose, catalog, args.agent)
-        if selection:
-            return launch(catalog, selection.project, selection.agent)
+        while True:
+            selection = curses.wrapper(choose, catalog, args.agent)
+            if not selection:
+                break
+            if selection.action == 'review':
+                from .review import interactive_review
+
+                interactive_review(catalog, selection.project, selection.agent)
+                args.agent = selection.agent
+            else:
+                return launch(catalog, selection.project, selection.agent)
     return 0
 
 
@@ -127,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
         return run(args)
     except KeyboardInterrupt:
         return 130
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, subprocess.SubprocessError, EOFError) as exc:
         print(f"agent-projects: {exc}", file=sys.stderr)
         return 1
 

@@ -18,6 +18,11 @@ telemetry, server, token store, automatic upload, or direct network client.
 - Installed agent CLIs retain their normal behavior, including network traffic,
   context uploads, account permissions, optional session sync, and billing. Shared
   notes and source transcripts can become model input when an agent reads them.
+- The explicit `s` summary action supplies a bounded user/assistant excerpt and
+  handoff notes to the chosen provider. Tool results and reasoning blocks are
+  excluded. Generated output is validated and reviewed before a title or summary
+  is saved; lifecycle is never inferred from a model response. These requests use
+  the native CLI account and may incur normal usage charges.
 - A local transcript is untrusted input. Handoffs ask the receiving agent to treat
   quoted content and tool results as evidence rather than new instructions. This
   is not a prompt-injection security boundary or a substitute for reviewing actions.

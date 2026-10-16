@@ -58,6 +58,7 @@ agent-projects doctor             # Paths, discovery warnings, and available too
 | `Tab` | Cycle Codex → Claude Code → Copilot |
 | `/` | Filter by project name, status, or directory |
 | `r` | Rename the project in this picker |
+| `s` | Ask the selected agent for a progress summary and suggested names |
 | `c` | Toggle the project between Active and Completed |
 | `a` | Archive the project from the shared list |
 | `u` | Restore the last archived project, including after a restart |
@@ -83,6 +84,31 @@ archived project to its prior lifecycle, including across restarts. Archived
 projects stay hidden even if their native session changes. Native deletion is left
 to each tool. `agent-projects list --all` includes archived projects. The `forget`
 CLI command and legacy `d`-then-`y` shortcut are aliases for archive.
+
+### Agent-generated summaries and names
+
+Press `s` on a project. The selected agent receives a bounded sample of recent
+user/assistant messages and existing handoff notes, then suggests a short progress
+summary, next steps, and up to three names. Tool output and hidden reasoning are
+excluded from the sample. The result may be incomplete if important context is
+outside that excerpt; the prompt asks the agent to state uncertainty.
+
+After seeing the result, press Enter to save only the summary, select a suggested
+name by number to save both, or `q` to discard. Names and summaries never change
+without that choice; reviews do not change lifecycle. Saved summaries appear in
+the preview and shared handoff. New native activity or handoff edits mark the
+summary as potentially stale.
+
+This is an explicit model request using your selected CLI's account, permissions,
+and billing. It runs only when requested. Codex reviews use ephemeral read-only
+sessions; Claude reviews disable tools and native persistence; Copilot reviews deny
+tools and use separate session IDs excluded from this picker. No background
+summarizer runs. Review-generation flags are checked against the documented native
+CLIs; authenticated model inference is not part of the automated tests.
+
+For scripts, `agent-projects --agent claude review ID --json` prints suggestions
+without applying them. `list --json` includes previously saved summaries without
+calling a model.
 
 ### Optional: show the picker when you start an agent
 
