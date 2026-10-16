@@ -19,7 +19,7 @@ def api(endpoint, method='GET', payload=None):
         args += ['--input', '-']
     result = subprocess.run(args, input=json.dumps(payload) if payload is not None else None,
                             text=True, capture_output=True, check=True)
-    return json.loads(result.stdout)
+    return json.loads(result.stdout) if result.stdout.strip() else None
 
 
 def matches(actual, expected):
@@ -51,6 +51,12 @@ def main():
     if 'name: CI required' not in base64.b64decode(workflow['content']).decode():
         raise ValueError('Merge the workflow setup PR first so CI required exists on the default branch')
     api(endpoint, 'PATCH', SETTINGS)
+    # Retire only the previously managed Copilot rule; preserve unrelated rules.
+    for existing_rule in api(endpoint + '/rulesets?per_page=100'):
+        if (existing_rule.get('source_type') == 'Repository'
+                and existing_rule['name'] == 'Copilot reviews pull requests and new pushes'):
+            api(endpoint + '/rulesets/' + str(existing_rule['id']), 'DELETE')
+            print('Removed: ' + existing_rule['name'])
     for proposed in rulesets:
         existing = []
         page = 1

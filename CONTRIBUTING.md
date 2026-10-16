@@ -56,15 +56,12 @@ known compatibility limits. Keep unrelated changes in separate PRs. Update docs
 for user-facing changes. The PR template provides a short checklist.
 
 CI runs tests on macOS/Linux and checks lint and packaging. `CI required` combines
-those results into one required check. Copilot reviews open PRs and new pushes
-when the maintainer has enabled the repository ruleset and the author is eligible
-for Copilot review. Read the findings and resolve applicable comments; automated
-review does not merge PRs. The maintainer makes the final merge decision.
+those results into one required check. Address applicable review findings before
+merging. The maintainer makes the final merge decision.
 
-For this single-maintainer repository, the proposed rules require PRs, passing
-CI, and resolved review conversations, but do not require an approval from a
-second human who may not be available. Copilot is an additional reviewer, not
-a claim that every change has human approval. Contributors cannot approve their
+For this single-maintainer repository, the rules require PRs, passing CI, and
+resolved review conversations.
+Contributors cannot approve their
 own PRs. Maintainers may squash commits; no CLA is required.
 
 Maintainers can apply the versioned settings with
