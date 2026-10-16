@@ -1,0 +1,7 @@
+#!/bin/sh
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = refs/heads/main ]; then
+        echo 'Direct pushes to main are disabled. Push a work branch and open a pull request.' >&2
+        exit 1
+    fi
+done
