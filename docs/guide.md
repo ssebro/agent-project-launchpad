@@ -10,14 +10,13 @@ the project was previously worked on with another agent.
 
 ## Install
 
-Requires **Python 3.10+**, macOS or Linux, a UTF-8 terminal, and at least one
-supported agent installed and authenticated separately. Windows is not supported
-natively; use WSL. There are **no runtime Python dependencies**.
+Requires **Python 3.10+**, macOS or Linux, a UTF-8 terminal, and an installed,
+authenticated agent. On Windows, use WSL.
 
 With [pipx](https://pipx.pypa.io/):
 
 ```sh
-pipx install git+https://github.com/ssebro/agent-project-launchpad.git
+pipx install agent-project-launchpad
 agent-launchpad setup
 ```
 
@@ -36,7 +35,7 @@ commands in bash/zsh, backing up the startup file before changing it. Run it onc
 then open a new Terminal. If you installed in a virtual environment, it does not
 need to stay activated.
 
-The package is installed from GitHub; it is not published on PyPI.
+PyPI provides released packages. Checkout installation supports local development.
 
 ## Pick up your work
 

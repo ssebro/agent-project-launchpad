@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-project-launchpad"
-version = "0.1.0"
+version = "1.0.0"
 description = "A project launcher and shared context for Codex, Claude Code, and GitHub Copilot CLI."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,6 @@ license = {text = "MIT"}
 authors = [{name = "Stephen Sebro"}]
 keywords = ["codex", "claude-code", "terminal", "sessions", "handoff"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
   "Environment :: Console :: Curses",
   "Operating System :: MacOS",
   "Operating System :: POSIX :: Linux",

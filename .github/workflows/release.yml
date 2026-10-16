@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install build and shell tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y zsh
+          python -m pip install '.[dev]'
+      - name: Validate version, tests, and lint
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          python -c 'import os; from agent_launchpad import __version__; assert os.environ["GITHUB_REF_NAME"] == "v" + __version__'
+          python -m unittest discover -s tests -v
+          ruff check .
+      - name: Build and smoke-test distribution
+        run: |
+          python -m build
+          python -m venv /tmp/launchpad-release-check
+          /tmp/launchpad-release-check/bin/python -m pip install --no-deps dist/*.whl
+          /tmp/launchpad-release-check/bin/agent-launchpad --version
+          /tmp/launchpad-release-check/bin/agent-launchpad --help
+          /tmp/launchpad-release-check/bin/agent-launchpad shell-init --shell zsh | zsh -n
+      - uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/agent-project-launchpad
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+      - name: Publish verified distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.2
+
+  github-release:
+    needs: [build, pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.tar.gz --verify-tag --latest --title "Agent Project Launchpad $GITHUB_REF_NAME" --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md"

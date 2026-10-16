@@ -28,6 +28,8 @@ class RepositorySetupTests(unittest.TestCase):
         def api(endpoint, method='GET', payload=None):
             if method != 'GET':
                 writes.append((endpoint, method, payload))
+                if method == 'DELETE':
+                    return None
                 if endpoint.endswith('/rulesets/1') or endpoint.endswith('/rulesets'):
                     identity = 1 if method == 'PUT' else 2
                     saved[identity] = {**payload, 'id': identity}
@@ -45,7 +47,7 @@ class RepositorySetupTests(unittest.TestCase):
         with patch('sys.argv', ['setup']), patch('tools.configure_github.api', side_effect=api), \
              contextlib.redirect_stdout(io.StringIO()):
             main()
-        self.assertEqual([method for _path, method, _payload in writes], ['PATCH', 'PUT', 'POST'])
+        self.assertEqual([method for _path, method, _payload in writes], ['PATCH', 'DELETE', 'POST'])
         self.assertFalse(any('/rulesets/99' in path for path, _method, _payload in writes))
 
     def test_dry_run_makes_no_network_calls(self):

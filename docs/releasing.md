@@ -1,19 +1,55 @@
-# Releasing
+# Releasing 1.0.0
 
-1. Run the full synthetic test suite, linter, and build on a clean checkout.
-2. Confirm the native launch/resume flags against installed tool help. Record any
-   compatibility changes. Never use customer transcripts as fixtures.
-3. Build both wheel and sdist, install the wheel in a clean virtual environment,
-   and check `--help`, `--version`, `list --json`, and `shell-init`.
-4. Review the Git diff and archive contents for personal paths, session IDs,
-   runtime handoffs, tokens, and generated data. Runtime state must stay outside
-   the checkout and distribution archives.
-5. Update the version in `pyproject.toml` and `src/agent_launchpad/__init__.py`,
-   date the changelog entry, and commit the release. Ensure GitHub CI is green.
-6. Create a `vX.Y.Z` annotated tag and push it. Create a GitHub release using that
-   changelog entry, attaching the verified wheel and sdist.
-7. PyPI publication is a separate future setup. Do not imply that the package can
-   be installed by name from PyPI until publication is verified.
+## One-time PyPI setup
 
-No release workflow receives a package-registry token. CI has read-only repository
-permissions. Publishing a release is a deliberate maintainer action.
+Sign in to [PyPI publishing settings](https://pypi.org/manage/account/publishing/)
+and add a pending GitHub publisher with these values:
+
+| Field | Value |
+| --- | --- |
+| PyPI project name | `agent-project-launchpad` |
+| Owner | `ssebro` |
+| Repository | `agent-project-launchpad` |
+| Workflow filename | `release.yml` |
+| Environment | `pypi` |
+
+The first successful publish creates the PyPI project. PyPI checks project-name
+availability at publication. [Trusted Publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
+
+## Ship the release
+
+The prepared branches separate the no-op fix, picker UI, and release packaging.
+To publish their PRs without merging:
+
+```sh
+python3 tools/ship_release.py --prepare-only
+```
+
+Review those branch changes and their PRs. Then the single completion command is:
+
+```sh
+python3 tools/ship_release.py --reviewed
+```
+
+Run it from an authenticated Terminal with a clean checkout. It enables and
+verifies repository rules, pushes/opens missing PRs, and merges the fix, UI, and
+release PRs in order. Each branch is brought up to date with main, and its exact
+commit must pass CI and required checks. GitHub still enforces unresolved review
+threads and any required approvals. The `--reviewed` flag is your confirmation
+that you reviewed these changes; the script does not invent a human approval.
+
+After main passes CI, it checks both version fields, creates the annotated
+`v1.0.0` tag, and pushes it. The Release workflow rechecks tests and lint, builds
+wheel and sdist, smoke-tests the wheel, and publishes the same artifacts to PyPI and GitHub. The command
+waits for that workflow and verifies GitHub assets and PyPI metadata before
+reporting shipped.
+It then cleans up merged local and remote branches. Cleanup checks exact commit
+ancestry or a merged PR with a matching head, and preserves branches in use.
+Failures stop the process. For a failed release workflow, correct the issue and
+retry its failed jobs with `gh run rerun RUN_ID --failed`, then repeat the
+completion command. Merged PRs are skipped.
+
+PyPI publishing uses short-lived GitHub OIDC credentials in the `pypi` job.
+GitHub release-write permission is scoped to the separate GitHub release job.
+Native history formats and cross-agent context limits remain documented in the
+user guide and compatibility notes.

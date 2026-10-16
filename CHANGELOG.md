@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.1.0 — Unreleased
+## 1.0.0 — 2026-10-16
 
 - Preserve project names and activity metadata when a resumed agent only reads its automatic handoff.
+- Default to a clearly marked new conversation; show the previous agent in the preview.
+- Include project identity and saved summaries in resume prompts.
+- Recover native links on Ctrl-C and preserve last-known metadata for incomplete histories.
+- Publish versioned wheels and source archives through PyPI and GitHub Releases.
 - Discover local Codex, Claude Code, and GitHub Copilot CLI conversations.
 - Resume native sessions with per-project shared Markdown handoffs.
 - Search, rename, switch tools, complete/reopen, and archive/restore from the keyboard.

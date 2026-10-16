@@ -3,3 +3,6 @@ recursive-include docs *.md *.png *.py *.swift
 recursive-include tests *.py
 global-exclude *.py[cod]
 recursive-include tools *.py
+include AGENTS.md
+recursive-include .github *.yml *.yaml *.json *.md
+recursive-include .githooks *
