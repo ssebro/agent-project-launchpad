@@ -56,3 +56,30 @@ class ShippingTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'will not be moved'):
                 main()
         self.assertFalse(any(call.args[:3] == ('git', 'push', 'origin') for call in run.call_args_list))
+
+
+class PyPIVerificationTests(unittest.TestCase):
+    def test_requires_wheel_and_source_for_the_exact_version(self):
+        import io
+        import json
+
+        from tools.ship_release import verify_pypi
+        response = io.BytesIO(json.dumps({'info': {'version': '1.0.0'}, 'urls': [
+            {'packagetype': 'bdist_wheel'}, {'packagetype': 'sdist'},
+        ]}).encode())
+        with patch('tools.ship_release.urllib.request.urlopen', return_value=response):
+            verify_pypi()
+
+    def test_missing_source_archive_is_not_reported_as_shipped(self):
+        import io
+        import json
+
+        from tools.ship_release import verify_pypi
+        response = io.BytesIO(json.dumps({'info': {'version': '1.0.0'}, 'urls': [
+            {'packagetype': 'bdist_wheel'},
+        ]}).encode())
+        with patch('tools.ship_release.urllib.request.urlopen', return_value=response), \
+             patch('tools.ship_release.time.monotonic', side_effect=[0, 0, 200]), \
+             patch('tools.ship_release.time.sleep'):
+            with self.assertRaisesRegex(ValueError, 'not verified'):
+                verify_pypi()

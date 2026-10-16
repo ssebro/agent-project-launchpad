@@ -1,5 +1,23 @@
 # Releasing 1.0.0
 
+## One-time PyPI setup
+
+Sign in to [PyPI publishing settings](https://pypi.org/manage/account/publishing/)
+and add a pending GitHub publisher with these values:
+
+| Field | Value |
+| --- | --- |
+| PyPI project name | `agent-project-launchpad` |
+| Owner | `ssebro` |
+| Repository | `agent-project-launchpad` |
+| Workflow filename | `release.yml` |
+| Environment | `pypi` |
+
+The first successful publish creates the PyPI project. PyPI checks project-name
+availability at publication. [Trusted Publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
+
+## Ship the release
+
 The prepared branches separate the no-op fix, picker UI, and release packaging.
 To publish their PRs without merging:
 
@@ -22,13 +40,16 @@ that you reviewed these changes; the script does not invent a human approval.
 
 After main passes CI, it checks both version fields, creates the annotated
 `v1.0.0` tag, and pushes it. The Release workflow rechecks tests and lint, builds
-wheel and sdist, smoke-tests the wheel, and publishes both on GitHub. The command
-waits for that workflow and verifies the published assets before reporting shipped.
+wheel and sdist, smoke-tests the wheel, and publishes the same artifacts to PyPI and GitHub. The command
+waits for that workflow and verifies GitHub assets and PyPI metadata before
+reporting shipped.
 It then cleans up merged local and remote branches. Cleanup checks exact commit
 ancestry or a merged PR with a matching head, and preserves branches in use.
-Failures stop the process; rerun after resolving them. Merged PRs are skipped.
+Failures stop the process. For a failed release workflow, correct the issue and
+retry its failed jobs with `gh run rerun RUN_ID --failed`, then repeat the
+completion command. Merged PRs are skipped.
 
-GitHub Actions uses its repository token, with release-write permission scoped
-to the release job.
+PyPI publishing uses short-lived GitHub OIDC credentials in the `pypi` job.
+GitHub release-write permission is scoped to the separate GitHub release job.
 Native history formats and cross-agent context limits remain documented in the
 user guide and compatibility notes.

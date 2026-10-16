@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +23,7 @@ CHANGES = [
      'include the project name and saved summary in resume prompts. Includes updated preview and tests.'),
     ('release/v1.0.0', 'Release Agent Project Launchpad 1.0.0',
      'Set version 1.0.0, document pinned installation, and add tag-triggered builds and GitHub release '
-     'publication on GitHub. The release tag is created only after the preceding PRs and CI pass.'),
+     'publication on PyPI and GitHub. The release tag is created only after the preceding PRs and CI pass.'),
 ]
 
 
@@ -101,6 +103,23 @@ def validate_version(initializer, metadata):
         raise ValueError('Merged main does not contain the expected version; refusing to tag')
 
 
+def verify_pypi():
+    url = f'https://pypi.org/pypi/agent-project-launchpad/{VERSION}/json'
+    deadline = time.monotonic() + 120
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=15) as response:
+                release = json.load(response)
+            kinds = {file['packagetype'] for file in release.get('urls', [])}
+            if release.get('info', {}).get('version') == VERSION and {'bdist_wheel', 'sdist'} <= kinds:
+                return
+        except (urllib.error.URLError, ValueError, TimeoutError):
+            pass
+        print('Waiting for PyPI release metadata…', flush=True)
+        time.sleep(5)
+    raise ValueError('PyPI publication is not verified; inspect the release workflow and project page')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reviewed', action='store_true',
@@ -138,10 +157,12 @@ def main():
     names = [asset['name'] for asset in release['assets']]
     if release['isDraft'] or not any(name.endswith('.whl') for name in names) or not any(name.endswith('.tar.gz') for name in names):
         raise ValueError('Release assets are incomplete; inspect the release before announcing it')
+    verify_pypi()
     run('git', 'switch', 'main')
     run('git', 'merge', '--ff-only', 'origin/main')
     run(sys.executable, str(ROOT / 'tools/cleanup_branches.py'))
     print('Shipped: ' + release['url'], flush=True)
+    print('PyPI: https://pypi.org/project/agent-project-launchpad/' + VERSION + '/')
 
 
 if __name__ == '__main__':

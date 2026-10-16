@@ -8,10 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -38,7 +36,40 @@ jobs:
           /tmp/launchpad-release-check/bin/agent-launchpad --version
           /tmp/launchpad-release-check/bin/agent-launchpad --help
           /tmp/launchpad-release-check/bin/agent-launchpad shell-init --shell zsh | zsh -n
-      - name: Publish verified wheel and source archive
+      - uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/agent-project-launchpad
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+      - name: Publish verified distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.2
+
+  github-release:
+    needs: [build, pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
