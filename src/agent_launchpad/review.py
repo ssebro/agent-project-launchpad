@@ -8,6 +8,7 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
+from .context import transcript_excerpt
 from .launch import executable
 from .models import Project
 from .projects import Catalog
@@ -30,57 +31,6 @@ class Suggestion:
     names: list[str]
     summary: str
     next_steps: list[str]
-
-
-def extract_text(content: object) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return '\n'.join(str(item.get('text', '')) for item in content
-                         if isinstance(item, dict) and item.get('type') in ('text', 'input_text', 'output_text'))
-    return ''
-
-
-def transcript_excerpt(file: Path, agent: str, limit: int = 16000) -> str:
-    """Retain a bounded tail of user/assistant text, never tools or hidden reasoning."""
-    messages: list[str] = []
-    size = 0
-    truncated = False
-    with file.open(encoding='utf-8') as stream:
-        for line in stream:
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if not isinstance(event, dict) or event.get('isSidechain') or event.get('agentId'):
-                continue
-            role, text = '', ''
-            if agent == 'codex' and event.get('type') == 'response_item':
-                payload = event.get('payload', {})
-                if isinstance(payload, dict) and payload.get('type') == 'message':
-                    role = payload.get('role')
-                    text = extract_text(payload.get('content'))
-            elif agent == 'claude' and event.get('type') in ('user', 'assistant'):
-                message = event.get('message', {})
-                if isinstance(message, dict):
-                    role, text = event['type'], extract_text(message.get('content'))
-            elif agent == 'copilot' and event.get('type') in ('user.message', 'assistant.message'):
-                data = event.get('data', {})
-                if isinstance(data, dict):
-                    role = event['type'].split('.')[0]
-                    text = extract_text(data.get('content'))
-            if role not in ('user', 'assistant') or not text:
-                continue
-            message = f'{role}: {text}'
-            if len(message) > limit:
-                message, truncated = message[-limit:], True
-            messages.append(message)
-            size += len(message)
-            while size > limit and len(messages) > 1:
-                size -= len(messages.pop(0))
-                truncated = True
-    prefix = '[Earlier conversation omitted; this is a bounded excerpt.]\n' if truncated else ''
-    return prefix + '\n'.join(messages)
 
 
 def review_prompt(catalog: Catalog, project: Project) -> str:
@@ -143,7 +93,7 @@ def parse_suggestion(output: str) -> Suggestion:
 def generate(catalog: Catalog, project: Project, agent: str) -> Suggestion:
     binary = executable(agent)
     prompt = review_prompt(catalog, project)
-    with tempfile.TemporaryDirectory(prefix='agent-projects-review-') as folder:
+    with tempfile.TemporaryDirectory(prefix='agent-launchpad-review-') as folder:
         root = Path(folder)
         if agent == 'codex':
             schema, response = root / 'schema.json', root / 'response.json'
@@ -184,7 +134,7 @@ def save(catalog: Catalog, project: Project, suggestion: Suggestion, name: str |
         record['summary'] = suggestion.summary
         record['next_steps'] = suggestion.next_steps
         record['review_source_updates'] = {s.key: s.updated for s in project.sessions.values()}
-        start, end = '<!-- agent-projects:review:start -->', '<!-- agent-projects:review:end -->'
+        start, end = '<!-- agent-launchpad:review:start -->', '<!-- agent-launchpad:review:end -->'
         block = (start + '\n## Latest agent review\n\n' + suggestion.summary + '\n\n'
                  + '\n'.join('- ' + step for step in suggestion.next_steps) + '\n' + end)
         text = file.read_text(encoding='utf-8')
@@ -197,11 +147,15 @@ def save(catalog: Catalog, project: Project, suggestion: Suggestion, name: str |
         record['reviewed_at'] = time.time()
 
 
-def interactive_review(catalog: Catalog, project: Project, agent: str) -> None:
-    from .ui import clean
-
+def interactive_review(catalog: Catalog, project: Project, agent: str) -> str:
     print(f'Generating a project review with {agent}… (Ctrl-C cancels)', flush=True)
     suggestion = generate(catalog, project, agent)
+    return present_review(catalog, project, suggestion)
+
+
+def present_review(catalog: Catalog, project: Project, suggestion: Suggestion) -> str:
+    from .ui import clean
+
     print('\n' + clean(suggestion.summary))
     if suggestion.next_steps:
         print('\nNext steps:')
@@ -210,10 +164,14 @@ def interactive_review(catalog: Catalog, project: Project, agent: str) -> None:
     print('\nSuggested names:')
     for index, name in enumerate(suggestion.names, 1):
         print(f'  {index}. {clean(name)}')
-    choice = input('\nEnter saves summary only · 1–3 saves summary + name · q discards: ').strip()
-    if choice == '':
-        save(catalog, project, suggestion, None)
-    elif choice in {str(i) for i in range(1, len(suggestion.names) + 1)}:
-        save(catalog, project, suggestion, suggestion.names[int(choice) - 1])
-    else:
-        print('Discarded. No project name, summary, or lifecycle was changed.')
+    while True:
+        choice = input(f'\nEnter saves summary · 1–{len(suggestion.names)} also renames · q cancels: ').strip()
+        if choice == '':
+            save(catalog, project, suggestion, None)
+            return 'Summary saved.'
+        if choice in {str(i) for i in range(1, len(suggestion.names) + 1)}:
+            save(catalog, project, suggestion, suggestion.names[int(choice) - 1])
+            return 'Summary and selected name saved.'
+        if choice in ('q', '\x1b'):
+            return 'Discarded. No project name, summary, or lifecycle changed.'
+        print('Choose a listed number, Enter, or q. Nothing has been saved yet.')

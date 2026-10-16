@@ -48,14 +48,16 @@ Copilot titles use the first user prompt; rename them here for clearer summaries
 
 ## Diagnosis
 
-Run `agent-projects doctor`. Confirm native binaries and configuration directories.
+Run `agent-launchpad doctor`. Confirm native binaries and configuration directories.
 If `copilot` is not on PATH but current `gh` is available, the launcher uses
 `gh copilot`; that command may offer a first-time installation. Check `gh copilot
 -- --help` for forwarded options. The retired `gh-copilot` extension is unsupported.
 
-If Terminal still opens the agent directly, ensure `agent-projects` is on PATH,
-remove the old prototype's shell-source line, add the README's `shell-init` line,
-and open a fresh shell. Wrappers only intercept bare interactive invocations.
+If Terminal still opens the agent directly, run `agent-launchpad setup`, open a
+fresh shell, and run `agent-launchpad check-shell`. Wrappers intercept bare
+interactive invocations. Later aliases/functions can override them; put the
+managed startup block after those definitions. Setup uses an absolute executable
+path, so an installed virtual environment does not need to stay activated.
 
 For a damaged `state.json`, back up the whole data directory before editing it.
 The launcher reports malformed or unknown-version state and refuses to overwrite

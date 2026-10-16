@@ -5,9 +5,9 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_projects.discovery import discover_copilot
-from agent_projects.launch import build_command, executable, launch
-from agent_projects.projects import Catalog
+from agent_launchpad.discovery import discover_copilot
+from agent_launchpad.launch import build_command, executable, launch
+from agent_launchpad.projects import Catalog
 from helpers import codex, paths
 
 
@@ -49,7 +49,7 @@ class CopilotTests(unittest.TestCase):
         self.assertNotIn("--prompt", args)
 
     def test_gh_fallback(self):
-        with patch("agent_projects.launch.shutil.which", side_effect=[None, "/bin/gh"]):
+        with patch("agent_launchpad.launch.shutil.which", side_effect=[None, "/bin/gh"]):
             self.assertEqual(executable("copilot"), ["/bin/gh", "copilot", "--"])
 
     def test_switch_to_copilot_then_resume(self):
@@ -59,8 +59,8 @@ class CopilotTests(unittest.TestCase):
         def create(args, **_kwargs):
             copilot(self.paths.copilot, args[2], self.root)
             return 0
-        with patch("agent_projects.launch.shutil.which", return_value="/fake/copilot"), \
-             patch("agent_projects.launch.subprocess.call", side_effect=create) as call:
+        with patch("agent_launchpad.launch.shutil.which", return_value="/fake/copilot"), \
+             patch("agent_launchpad.launch.subprocess.call", side_effect=create) as call:
             launch(catalog, project, "copilot")
             native_id = call.call_args.args[0][2]
         project = catalog.find(project.id)

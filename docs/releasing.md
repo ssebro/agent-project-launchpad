@@ -8,7 +8,7 @@
 4. Review the Git diff and archive contents for personal paths, session IDs,
    runtime handoffs, tokens, and generated data. Runtime state must stay outside
    the checkout and distribution archives.
-5. Update the version in `pyproject.toml` and `src/agent_projects/__init__.py`,
+5. Update the version in `pyproject.toml` and `src/agent_launchpad/__init__.py`,
    date the changelog entry, and commit the release. Ensure GitHub CI is green.
 6. Create a `vX.Y.Z` annotated tag and push it. Create a GitHub release using that
    changelog entry, attaching the verified wheel and sdist.

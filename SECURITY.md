@@ -1,6 +1,6 @@
 # Privacy and security
 
-Agent Projects is a local launcher. It reads session metadata and selected local
+Agent Project Launchpad is a local launcher. It reads session metadata and selected local
 transcripts, maintains handoff files, and starts an installed agent CLI. It has no
 telemetry, server, token store, automatic upload, or direct network client.
 
@@ -8,7 +8,9 @@ telemetry, server, token store, automatic upload, or direct network client.
 
 - Codex SQLite databases are opened in read-only mode. Native JSONL logs are
   opened for reading only. Forget never deletes native files.
-- Only the launcher's own data directory is written. New data files use user-only
+- Runtime writes stay in the launcher's own data directory. Explicit `setup` and
+  `uninstall-shell` also manage a marked block in the selected shell startup file,
+  preserving other content and making a private backup before changes. New data files use user-only
   permissions; the containing directory is created private when it does not exist.
 - Project IDs are hashed into handoff filenames so a session ID cannot supply a
   relative path. Process arguments are lists, not shell-interpolated commands.

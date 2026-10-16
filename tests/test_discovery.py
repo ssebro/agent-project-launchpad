@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent_projects.discovery import discover_claude, discover_codex, timestamp
+from agent_launchpad.discovery import discover_claude, discover_codex, timestamp
 from helpers import claude, codex
 
 

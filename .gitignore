@@ -9,7 +9,7 @@ dist/
 htmlcov/
 .DS_Store
 # Runtime data never belongs in the source repository.
-.agent-projects/
+.agent-launchpad/
 state.json
 state.lock
 handoffs/

@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent_projects.projects import Catalog
-from agent_projects.store import Store
+from agent_launchpad.projects import Catalog
+from agent_launchpad.store import Store
 from helpers import claude, codex, paths
 
 

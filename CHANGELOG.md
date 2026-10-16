@@ -8,7 +8,12 @@
 - Automatic Active lifecycle; new native activity reopens completed projects.
 - On-demand agent summaries, next steps, and suggested names with explicit review
   before saving, plus stale-summary detection.
-- Optional bash/zsh wrappers for bare `codex`, `claude`, `copilot`, and `gh copilot`.
+- Core bash/zsh startup integration for bare `codex`, `claude`, `copilot`, and `gh copilot`.
+- Core `setup` command installs startup integration with backups, idempotent edits,
+  and clean removal; `check-shell` verifies fresh-shell behavior.
+- Safe live demo replaces the generated preview; shorter README leads with setup.
+- Search resumes with one Enter; rename starts with the current name; summary
+  cancellation and missing agents keep the picker open.
 - Standard-library runtime, versioned private local metadata, atomic writes, and
   process locks. Native histories remain read-only.
 - CLI commands, documentation, synthetic tests, and macOS/Linux CI.

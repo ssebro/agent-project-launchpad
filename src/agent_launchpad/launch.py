@@ -6,14 +6,18 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from .context import create_packet
 from .discovery import discover_claude, discover_codex, discover_copilot
 from .models import AGENTS, Project
 from .projects import Catalog
 
 
-def handoff_prompt(file: Path) -> str:
+def handoff_prompt(file: Path, packet: Path | None = None) -> str:
     return (
         f"Resume this project. First read the shared handoff at {file}. "
+        + (f"Also read the freshly generated context packet at {packet}; it records recent dialogue, "
+           "source timestamps, and context gaps. Reconcile the latest evidence with the handoff. "
+           if packet else '') +
         "Read the source files it identifies where needed. Your native conversation may be "
         "older than the handoff; reconcile differences before acting. Keep this handoff updated "
         "with Status, findings, decisions, changed files, validation, and next steps before "
@@ -35,7 +39,7 @@ def executable(agent: str) -> list[str]:
 
 
 def build_command(binary: str | list[str], agent: str, native_id: str | None, file: Path,
-                  new_id: str | None = None) -> list[str]:
+                  new_id: str | None = None, packet: Path | None = None) -> list[str]:
     if agent not in AGENTS:
         raise ValueError(f"Unsupported agent: {agent}")
     if native_id is not None and (not native_id or native_id.startswith("-")):
@@ -43,12 +47,12 @@ def build_command(binary: str | list[str], agent: str, native_id: str | None, fi
     args = [binary] if isinstance(binary, str) else list(binary)
     if agent == "copilot":
         args += ["--session-id", native_id or new_id] if native_id or new_id else []
-        return args + ["--interactive", handoff_prompt(file)]
+        return args + ["--interactive", handoff_prompt(file, packet)]
     if native_id:
         args += ["resume", native_id] if agent == "codex" else ["--resume", native_id]
     elif agent == "claude" and new_id:
         args += ["--session-id", new_id]
-    args += [handoff_prompt(file)]
+    args += [handoff_prompt(file, packet)]
     return args
 
 
@@ -96,8 +100,9 @@ def launch(catalog: Catalog, project: Project | None, agent: str) -> int:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise ValueError(f"This project is already open through this launcher in {agent}.") from exc
+        packet = create_packet(catalog, catalog.find(project.id))
         returncode = subprocess.call(
-            build_command(binary, agent, native_id, file, new_id), cwd=directory,
+            build_command(binary, agent, native_id, file, new_id, packet), cwd=directory,
         )
         with catalog.store.edit() as state:
             record = state["projects"].setdefault(project.id, {})

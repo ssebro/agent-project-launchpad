@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent_projects.cli import shell_init
+from agent_launchpad.cli import shell_init
 
 
 class ShellTests(unittest.TestCase):

@@ -17,6 +17,8 @@ Local metadata + Markdown handoffs ───────────────
 | Module | Responsibility |
 | --- | --- |
 | `config.py` | Resolve user-controlled data and history locations |
+| `integration.py` | Set up, check, and remove the core shell startup integration |
+| `context.py` | Extract bounded dialogue and refresh cross-agent context before resume |
 | `models.py` | Session, project, and discovery result types |
 | `discovery.py` | Read-only format adapters; return sessions and warnings |
 | `store.py` | Versioned metadata transactions, private files, handoff paths |
@@ -25,6 +27,7 @@ Local metadata + Markdown handoffs ───────────────
 | `review.py` | Extract bounded dialogue, request agent suggestions, save accepted reviews |
 | `ui.py` | Keyboard interactions and terminal layout |
 | `cli.py` | Parse commands, print shell integration, report errors |
+| `demo.py` | Exercise the real UI with fictional disposable histories |
 
 ## Identity
 
@@ -47,7 +50,7 @@ timestamps and handoff modification times determine visible last-update time.
 ## Persistence
 
 ```text
-agent-projects/
+agent-launchpad/
 ├── state.json                  # version, projects, forgotten stack
 ├── state.lock                  # short-lived metadata transaction lock
 └── handoffs/
@@ -66,6 +69,8 @@ These are local-filesystem guarantees, not a distributed lock or sync protocol.
 1. Validate the selected binary and working directory.
 2. Create a handoff if needed, including relevant local transcript paths.
 3. Read existing native links or allocate a pending UUID for Claude/Copilot.
+   Refresh a separate context packet with current source references, timestamps,
+   recent dialogue, and explicit evidence gaps. Preserve the shared Markdown notes.
 4. Start the tool with a handoff-reading prompt and its native resume arguments.
 5. After exit, record a new link only if its native transcript exists. For Codex,
    associate only a unique newly discovered session in the working directory.

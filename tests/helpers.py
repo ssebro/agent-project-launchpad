@@ -4,7 +4,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-from agent_projects.config import Paths
+from agent_launchpad.config import Paths
 
 
 def paths(root: Path) -> Paths:

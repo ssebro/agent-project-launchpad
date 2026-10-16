@@ -6,9 +6,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_projects.cli import main, shell_init
-from agent_projects.projects import Catalog
-from agent_projects.ui import Theme, choose, fit, render, text_width
+from agent_launchpad.cli import main, shell_init
+from agent_launchpad.projects import Catalog
+from agent_launchpad.ui import Theme, choose, fit, render, text_width
 from helpers import codex, paths
 
 
@@ -45,7 +45,7 @@ class UITests(unittest.TestCase):
         codex(self.paths.codex, [("one", "First", self.temp.name, 200, None, 0, None),
                                  ("two", "Second", self.temp.name, 100, None, 0, None)])
         self.catalog = Catalog(self.paths)
-        cursor = patch("agent_projects.ui.curses.curs_set")
+        cursor = patch("agent_launchpad.ui.curses.curs_set")
         cursor.start()
         self.addCleanup(cursor.stop)
 
@@ -78,7 +78,7 @@ class UITests(unittest.TestCase):
         self.assertEqual(self.choose(["d", "n", "\n"]).project.id, "codex:one")
 
     def test_rename_and_status(self):
-        result = self.choose(["r", *"Readable name", "\n", "c", "\n"])
+        result = self.choose(["r", '\x15', *"Readable name", "\n", "c", "\n"])
         self.assertEqual(result.project.title, "Readable name")
         self.assertEqual(result.project.status, "Completed")
 
@@ -93,6 +93,26 @@ class UITests(unittest.TestCase):
         self.assertEqual(result.action, 'review')
         self.assertEqual(result.project.status, 'Active')
         self.assertEqual(self.catalog.find(result.project.id).status, 'Active')
+
+    def test_rename_starts_with_existing_name(self):
+        result = self.choose(['r', *' draft', '\n', '\n'])
+        self.assertEqual(result.project.title, 'First draft')
+
+    def test_search_opens_with_one_enter_and_supports_arrows(self):
+        import curses
+
+        self.assertEqual(self.choose(['/', *'Second', '\n']).project.id, 'codex:two')
+        result = self.choose(['/', curses.KEY_DOWN, '\n'])
+        self.assertEqual(result.project.id, 'codex:two')
+
+    def test_unavailable_agent_keeps_picker_open(self):
+        result = choose(Screen(['\n', 'n', 's', '\t', '\n']), self.catalog, 'codex',
+                        available_agents={'codex': False, 'claude': True})
+        self.assertEqual(result.agent, 'claude')
+
+    def test_help_returns_to_same_selection(self):
+        result = self.choose(['?', 'x', '\n'])
+        self.assertEqual(result.project.id, 'codex:one')
 
     def test_empty_small_and_narrow_screens(self):
         for project in self.catalog.load():
@@ -124,7 +144,7 @@ class UITests(unittest.TestCase):
                                  ('Ready for review', 4), ('Not done', 5)]:
             self.assertEqual(theme.status(status), expected)
         with patch.dict('os.environ', {'NO_COLOR': '1'}), \
-             patch('agent_projects.ui.curses.start_color') as start:
+             patch('agent_launchpad.ui.curses.start_color') as start:
             self.assertEqual(Theme.initialize(), Theme())
             start.assert_not_called()
 
@@ -135,7 +155,7 @@ class CLITests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.paths = paths(Path(self.temp.name))
         codex(self.paths.codex, [("one", "Example", self.temp.name, 100, None, 0, None)])
-        config = patch("agent_projects.cli.Paths.from_env", return_value=self.paths)
+        config = patch("agent_launchpad.cli.Paths.from_env", return_value=self.paths)
         config.start()
         self.addCleanup(config.stop)
 

@@ -129,13 +129,16 @@ class Painter:
 
 
 def render(screen, visible: list[Project], selected: int, total: int, agent: str,
-           query: str, searching: bool, message: str, theme: Theme) -> None:
+           query: str, searching: bool, message: str, theme: Theme,
+           available: bool = True) -> None:
     """Dense list, stable columns, a separate preview, and a semantic command bar."""
     screen.erase()
     paint = Painter(screen)
     height, width = paint.height, paint.width
-    paint.write(0, 1, "agent projects", theme.accent)
-    paint.write(0, max(18, width - 29), f"{agent.upper()}  ·  Tab switch tool", theme.accent)
+    paint.write(0, 1, "agent launchpad", theme.accent)
+    paint.write(0, max(18, width - 29), f"{agent.upper()}{'' if available else ' unavailable'}", theme.accent)
+    paint.write(1, max(18, width - 29), ' Tab ', theme.key)
+    paint.write(1, max(18, width - 29) + 6, 'switch agent', theme.muted)
     paint.write(2, 1, " / ", theme.key if searching else theme.accent)
     paint.write(2, 5, query + ("▏" if searching else "") if query or searching
                 else "Search projects…", 0 if query or searching else theme.muted)
@@ -167,7 +170,7 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
         date = stamp.strftime("%Y-%m-%d %H:%M" if date_width == 16 else "%Y-%m-%d")
         paint.write(y, date_x, date, style if active else theme.muted)
     if not visible:
-        paint.write(7, 3, "No matches. Clear search, start new, or undo forget.", theme.warning)
+        paint.write(7, 3, "No projects yet." if total == 0 else "No matches. Esc clears search.", theme.warning)
     paint.write(preview_y, 1, "─" * (width - 3), theme.muted)
     if visible:
         item = visible[selected]
@@ -183,9 +186,13 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     paint.keys(height - 4, [("n", "new"), ("Enter", "resume"), ("↑↓", "move"),
                             ("/", "search"), ("q", "quit")], theme)
     paint.keys(height - 3, [("s", "summary"), ("c", "done/open"), ("a", "archive"), ("r", "rename"),
-                            ("u", "undo"), ("?", "help")], theme)
+                            ("u", "undo")], theme)
     message_style = theme.warning if message.startswith("Forget this project?") else theme.muted
-    paint.write(height - 2, 1, message or "Active automatically · c completes/reopens · a archives", message_style)
+    message_style = theme.danger if message.startswith(('Summary failed', 'Agent unavailable')) else message_style
+    paint.write(height - 2, 1, message or "Active automatically · c completes/reopens · a archives", message_style,
+                width=max(1, width - 12))
+    paint.write(height - 2, width - 9, ' ? ', theme.key)
+    paint.write(height - 2, width - 5, 'help', theme.muted)
     if height < 16 or width < 42:
         screen.erase()
         paint.write(0, 0, "Resize terminal to at least 42 × 16.")
@@ -193,7 +200,34 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     screen.refresh()
 
 
-def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
+def help_screen(screen, theme: Theme) -> None:
+    screen.erase()
+    paint = Painter(screen)
+    paint.write(0, 1, 'Keyboard help', theme.accent)
+    lines = [
+        ('n', 'New conversation in your current Terminal directory'),
+        ('↑↓ / jk', 'Select a project'),
+        ('Enter', 'Resume; also opens the selected search result'),
+        ('Tab', 'Switch Codex / Claude / Copilot'),
+        ('/', 'Search project names, lifecycle, and directories'),
+        ('s', 'Agent summary and suggested names; review before saving'),
+        ('r', 'Edit project name; Ctrl-U clears the field'),
+        ('c', 'Toggle Completed / Active'),
+        ('a', 'Archive; native conversation history is kept'),
+        ('u', 'Undo the last archive, including after restart'),
+        ('Esc / q', 'Cancel (Esc), or quit from the main list'),
+    ]
+    for index, (key, label) in enumerate(lines, 2):
+        paint.write(index, 1, fit(key, 9, True), theme.accent)
+        paint.write(index, 12, label)
+    paint.write(paint.height - 3, 1, 'Summary uses the selected agent account and normal usage.', theme.muted)
+    paint.write(paint.height - 2, 1, 'Press any key to return.', theme.key)
+    screen.refresh()
+    screen.get_wch()
+
+
+def choose(screen, catalog: Catalog, agent: str, notice: str = '',
+           available_agents: dict[str, bool] | None = None) -> Selection | None:
     curses.curs_set(0)
     screen.keypad(True)
     theme = Theme.initialize()
@@ -201,7 +235,7 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
     selected, query = 0, ""
     searching, confirming = False, False
     editing: str | None = None
-    edit_value, notice = "", ""
+    edit_value = ''
     while True:
         visible = [p for p in projects if query.casefold() in
                    f"{p.title} {p.status} {p.directory or ''}".casefold()]
@@ -216,7 +250,8 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
             footer = f"Search: {query}▏  (Enter applies; Esc clears)"
         elif query:
             footer = f"Filter: {query}  ·  / to edit; Esc clears"
-        render(screen, visible, selected, len(projects), agent, query, searching, footer, theme)
+        available = available_agents is None or available_agents.get(agent, False)
+        render(screen, visible, selected, len(projects), agent, query, searching, footer, theme, available)
         try:
             key = screen.get_wch()
         except curses.error:
@@ -241,6 +276,8 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
                 editing = None
             elif key in ("\x7f", "\b", curses.KEY_BACKSPACE):
                 edit_value = edit_value[:-1]
+            elif key == '\x15':
+                edit_value = ''
             elif isinstance(key, str) and key.isprintable():
                 edit_value += key
             continue
@@ -248,7 +285,15 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
             if key == "\x1b":
                 searching, query = False, ""
             elif key in ("\n", "\r", curses.KEY_ENTER):
-                searching = False
+                if project and available:
+                    return Selection(agent, project)
+                if project:
+                    notice = 'Agent unavailable. Press Tab to select an installed agent.'
+                    searching = False
+            elif key in (curses.KEY_UP, curses.KEY_DOWN) and visible:
+                direction = -1 if key == curses.KEY_UP else 1
+                selected = (selected + direction) % len(visible)
+                continue
             elif key in ("\x7f", "\b", curses.KEY_BACKSPACE):
                 query = query[:-1]
             elif isinstance(key, str) and key.isprintable():
@@ -260,15 +305,19 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
         elif key in ("q", "\x1b"):
             return None
         elif key == "n":
-            return Selection(agent)
+            if available:
+                return Selection(agent)
+            notice = 'Agent unavailable. Press Tab to select an installed agent.'
         elif key == "\t":
             agent = AGENTS[(AGENTS.index(agent) + 1) % len(AGENTS)]
         elif key == "/":
             searching = True
         elif key == "?":
-            notice = "s summary + names · c done/open · a archive · u undo · Tab switches tool"
+            help_screen(screen, theme)
         elif key == 's' and project:
-            return Selection(agent, project, 'review')
+            if available:
+                return Selection(agent, project, 'review')
+            notice = 'Agent unavailable. Press Tab to select an installed agent.'
         elif key == "u":
             restored = catalog.store.restore()
             projects = catalog.load()
@@ -284,10 +333,12 @@ def choose(screen, catalog: Catalog, agent: str) -> Selection | None:
             projects = catalog.load()
             notice = "Marked active." if project.status == "Completed" else "Marked completed."
         elif key == "r" and project:
-            editing, edit_value = "Name", ""
+            editing, edit_value = "Name", project.title
         elif key in (curses.KEY_UP, "k") and visible:
             selected = (selected - 1) % len(visible)
         elif key in (curses.KEY_DOWN, "j") and visible:
             selected = (selected + 1) % len(visible)
         elif key in ("\n", "\r", curses.KEY_ENTER) and project:
-            return Selection(agent, project)
+            if available:
+                return Selection(agent, project)
+            notice = 'Agent unavailable. Press Tab to select an installed agent.'

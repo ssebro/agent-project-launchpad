@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_projects.projects import Catalog
-from agent_projects.review import (
+from agent_launchpad.projects import Catalog
+from agent_launchpad.review import (
     generate,
     interactive_review,
     parse_suggestion,
@@ -99,13 +99,13 @@ class ReviewTests(unittest.TestCase):
         self.assertTrue(self.catalog.find(self.project.id).summary_stale)
 
     def test_interactive_cancel_never_renames_or_saves_summary(self):
-        with patch('agent_projects.review.generate', return_value=self.suggestion), \
+        with patch('agent_launchpad.review.generate', return_value=self.suggestion), \
              patch('builtins.input', return_value='q'), contextlib.redirect_stdout(io.StringIO()):
             interactive_review(self.catalog, self.project, 'codex')
         self.assertFalse(self.catalog.find(self.project.id).summary)
         self.assertEqual(self.catalog.find(self.project.id).title, 'Example')
 
-    @patch('agent_projects.review.executable', return_value=['/fake/codex'])
+    @patch('agent_launchpad.review.executable', return_value=['/fake/codex'])
     def test_codex_review_is_ephemeral_and_read_only(self, _executable):
         def complete(args, **kwargs):
             file = Path(args[args.index('--output-last-message') + 1])
@@ -114,22 +114,22 @@ class ReviewTests(unittest.TestCase):
             self.assertIn('--ephemeral', args)
             self.assertEqual(args[args.index('--sandbox') + 1], 'read-only')
             return subprocess.CompletedProcess(args, 0, '', '')
-        with patch('agent_projects.review.subprocess.run', side_effect=complete):
+        with patch('agent_launchpad.review.subprocess.run', side_effect=complete):
             self.assertEqual(generate(self.catalog, self.project, 'codex'), self.suggestion)
 
-    @patch('agent_projects.review.executable', return_value=['/fake/claude'])
+    @patch('agent_launchpad.review.executable', return_value=['/fake/claude'])
     def test_claude_review_disables_tools_and_session_persistence(self, _executable):
         output = json.dumps(dict(result=json.dumps(PAYLOAD)))
-        with patch('agent_projects.review.subprocess.run', return_value=
+        with patch('agent_launchpad.review.subprocess.run', return_value=
                    subprocess.CompletedProcess([], 0, output, '')) as call:
             self.assertEqual(generate(self.catalog, self.project, 'claude'), self.suggestion)
         args = call.call_args.args[0]
         self.assertEqual(args[args.index('--tools') + 1], '')
         self.assertIn('--no-session-persistence', args)
 
-    @patch('agent_projects.review.executable', return_value=['gh', 'copilot', '--'])
+    @patch('agent_launchpad.review.executable', return_value=['gh', 'copilot', '--'])
     def test_copilot_review_is_tracked_separately_and_denies_tools(self, _executable):
-        with patch('agent_projects.review.subprocess.run', return_value=
+        with patch('agent_launchpad.review.subprocess.run', return_value=
                    subprocess.CompletedProcess([], 0, json.dumps(PAYLOAD), '')) as call:
             self.assertEqual(generate(self.catalog, self.project, 'copilot'), self.suggestion)
         args = call.call_args.args[0]
@@ -137,9 +137,9 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(args[args.index('--deny-tool') + 1], '*')
         self.assertEqual(len(self.catalog.store.read()['review_sessions']), 1)
 
-    @patch('agent_projects.review.executable', return_value=['/fake/claude'])
+    @patch('agent_launchpad.review.executable', return_value=['/fake/claude'])
     def test_failed_review_does_not_modify_project(self, _executable):
-        with patch('agent_projects.review.subprocess.run', return_value=
+        with patch('agent_launchpad.review.subprocess.run', return_value=
                    subprocess.CompletedProcess([], 1, '', 'Authentication failed')), \
              self.assertRaisesRegex(ValueError, 'nothing was saved'):
             generate(self.catalog, self.project, 'claude')

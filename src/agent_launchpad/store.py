@@ -17,7 +17,7 @@ from typing import Any
 def atomic_write(path: Path, content: str) -> None:
     """Replace a file atomically, with user-only permissions."""
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    fd, temporary = tempfile.mkstemp(prefix=".agent-projects-", dir=path.parent)
+    fd, temporary = tempfile.mkstemp(prefix=".agent-launchpad-", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             stream.write(content)

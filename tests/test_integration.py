@@ -43,7 +43,7 @@ with (home.parent / 'calls.jsonl').open('a') as stream:
                 "CLAUDE_CONFIG_DIR": str(config.claude),
                 "COPILOT_HOME": str(root / "copilot"),
             }
-            command = [sys.executable, "-m", "agent_projects", "--agent", "claude",
+            command = [sys.executable, "-m", "agent_launchpad", "--agent", "claude",
                        "resume", "codex:one"]
             for _ in range(2):
                 result = subprocess.run(command, env=environment, cwd=root, text=True,
