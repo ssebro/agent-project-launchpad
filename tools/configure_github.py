@@ -60,11 +60,11 @@ def main():
             if len(batch) < 100:
                 break
             page += 1
-        matches = [item for item in existing if item['name'] == proposed['name']]
-        if len(matches) > 1:
+        existing_matches = [item for item in existing if item['name'] == proposed['name']]
+        if len(existing_matches) > 1:
             raise ValueError('Duplicate managed rulesets; inspect repository settings before retrying')
-        suffix = '/' + str(matches[0]['id']) if matches else ''
-        saved = api(endpoint + '/rulesets' + suffix, 'PUT' if matches else 'POST', proposed)
+        suffix = '/' + str(existing_matches[0]['id']) if existing_matches else ''
+        saved = api(endpoint + '/rulesets' + suffix, 'PUT' if existing_matches else 'POST', proposed)
         verified = api(endpoint + '/rulesets/' + str(saved['id']))
         for key in ('name', 'enforcement', 'conditions', 'rules'):
             if not matches(verified.get(key), proposed[key]):
@@ -73,7 +73,7 @@ def main():
     verified = api(endpoint)
     if any(verified.get(key) != value for key, value in SETTINGS.items()):
         raise ValueError('Repository merge settings did not match requested settings')
-    print('Verified merge settings. Local hooks: git config core.hooksPath .githooks')
+    print('Verified merge settings. Local hooks: python3 tools/install_git_hooks.py')
 
 
 if __name__ == '__main__':

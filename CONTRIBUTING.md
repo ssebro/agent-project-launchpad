@@ -32,10 +32,12 @@ test fixture, screenshot, or pull request. Reproduce the format using invented d
 Install the local guards once per checkout:
 
 ```sh
-git config core.hooksPath .githooks
+python3 tools/install_git_hooks.py
 ```
 
-They reject commits on `main` and pushes to `main`. Server-side rules are the
+The guards are copied into Git’s local metadata directory so they remain active
+when you switch branches. They reject commits on `main` and pushes to `main`.
+Server-side rules are the
 shared enforcement; local hooks are an extra guard and are not installed by pip.
 
 Start a focused branch from the latest default branch:

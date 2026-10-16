@@ -3,7 +3,7 @@
 All work goes through a focused branch and pull request. Install local guards:
 
 ```sh
-git config core.hooksPath .githooks
+python3 tools/install_git_hooks.py
 ```
 
 The hooks prevent commits and pushes to `main` in this checkout. AGENTS.md carries
