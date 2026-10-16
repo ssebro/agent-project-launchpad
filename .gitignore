@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+# Runtime data never belongs in the source repository.
+.agent-projects/
+state.json
+state.lock
+handoffs/
+links.json
+forgotten.json
+*.sqlite*
+*.jsonl
+.env*
+!.env.example

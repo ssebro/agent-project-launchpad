@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-projects"
+version = "0.1.0"
+description = "A local project picker and shared handoffs for Codex and Claude Code."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Stephen Sebro"}]
+keywords = ["codex", "claude-code", "terminal", "sessions", "handoff"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console :: Curses",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development",
+]
+dependencies = []
+
+[project.scripts]
+agent-projects = "agent_projects.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ssebro/agent-projects"
+Issues = "https://github.com/ssebro/agent-projects/issues"
+
+[project.optional-dependencies]
+dev = ["ruff>=0.11,<1", "build>=1,<2"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agent_projects", "helpers"]

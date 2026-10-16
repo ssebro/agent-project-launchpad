@@ -1,0 +1,24 @@
+name: Bug report
+description: Report discovery, resume, or picker problems with a synthetic reproduction.
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach real conversations, private paths, tokens, or handoff files.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Use invented session data when the problem involves a file format.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, launcher version, agent versions, terminal, and shell. Redact paths from doctor output.
