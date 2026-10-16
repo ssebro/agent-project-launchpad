@@ -48,8 +48,9 @@ codex        # Open it with Codex selected
 gh copilot   # Open it with GitHub Copilot selected
 ```
 
-Existing local conversations appear automatically. Use ↑/↓ to choose a project
-and Enter to continue with the agent you launched. The header says “Continue
+Existing local conversations appear automatically. “New conversation” is the
+default selection; Enter starts fresh in your current directory. Use ↑/↓ to
+choose a saved project and Enter to continue with the agent you launched. The header says “Continue
 with Codex” (or your chosen agent); the project preview shows which agent most
 recently worked on it. If that changes your choice, press Tab to change the
 agent you will continue with.
@@ -64,7 +65,7 @@ see [shell setup details](#shell-setup-details) below.
 | --- | --- |
 | `n` | Start a new conversation immediately, in the current Terminal directory |
 | `↑` / `↓` or `k` / `j` | Select a project |
-| `Enter` | Resume the selected project with the selected tool |
+| `Enter` | Start a new conversation, or resume the selected saved project |
 | `Tab` | Change the agent to continue with: Codex → Claude Code → Copilot |
 | `/` | Filter by project name, status, or directory |
 | `r` | Rename the project in this picker |

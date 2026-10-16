@@ -53,6 +53,9 @@ class Theme:
     warning: int = curses.A_BOLD
     danger: int = curses.A_BOLD
     ready: int = curses.A_BOLD
+    previous_agent: int = curses.A_BOLD
+    new_entry: int = curses.A_BOLD
+    new_selected: int = curses.A_REVERSE | curses.A_BOLD
 
     @classmethod
     def initialize(cls) -> "Theme":
@@ -75,6 +78,7 @@ class Theme:
                 (curses.COLOR_YELLOW, background),
                 (curses.COLOR_RED, background),
                 (curses.COLOR_MAGENTA, background),
+                (curses.COLOR_WHITE, curses.COLOR_MAGENTA),
             ]
             for number, (foreground, back) in enumerate(pairs, 1):
                 curses.init_pair(number, foreground, back)
@@ -86,6 +90,9 @@ class Theme:
                 warning=curses.color_pair(5),
                 danger=curses.color_pair(6) | curses.A_BOLD,
                 ready=curses.color_pair(7),
+                previous_agent=curses.color_pair(6) | curses.A_BOLD,
+                new_entry=curses.color_pair(7) | curses.A_BOLD,
+                new_selected=curses.color_pair(8) | curses.A_BOLD,
             )
         except curses.error:
             return cls()
@@ -138,7 +145,7 @@ def last_agent(project: Project) -> str:
     return AGENT_LABELS.get(latest.agent, latest.agent)
 
 
-def render(screen, visible: list[Project], selected: int, total: int, agent: str,
+def render(screen, visible: list[Project | None], selected: int, total: int, agent: str,
            query: str, searching: bool, message: str, theme: Theme,
            available: bool = True) -> None:
     """Dense list, stable columns, a separate preview, and a semantic command bar."""
@@ -156,7 +163,7 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     paint.write(2, 1, " / ", theme.key if searching else theme.accent)
     paint.write(2, 5, query + ("▏" if searching else "") if query or searching
                 else "Search projects…", 0 if query or searching else theme.muted)
-    paint.write(3, 1, f"{len(visible)}/{total} projects", theme.muted)
+    paint.write(3, 1, f"{sum(item is not None for item in visible)}/{total} projects", theme.muted)
     paint.write(3, max(17, width - 26), "most recently updated", theme.muted)
     date_width = 16 if width >= 100 else 10
     status_width = 20 if width >= 100 else 16 if width >= 65 else 12
@@ -174,9 +181,14 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
         y = 6 + index - start
         active = index == selected
         style = theme.selected if active else 0
+        if item is None:
+            style = theme.new_selected if active else theme.new_entry
         if active:
             paint.write(y, 1, " " * (width - 2), style)
         paint.write(y, 1, "›" if active else " ", style | curses.A_BOLD)
+        if item is None:
+            paint.write(y, 3, fit("New conversation", title_width), style | curses.A_BOLD)
+            continue
         paint.write(y, 3, fit(item.title, title_width), style | (curses.A_BOLD if active else 0))
         paint.write(y, status_x, fit(item.status, status_width),
                     style | curses.A_BOLD if active else theme.status(item.status))
@@ -186,19 +198,28 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     if not visible:
         paint.write(7, 3, "No projects yet." if total == 0 else "No matches. Esc clears search.", theme.warning)
     paint.write(preview_y, 1, "─" * (width - 3), theme.muted)
-    if visible:
+    if visible and visible[selected] is None:
+        paint.write(preview_y + 1, 1, "New conversation", theme.new_entry)
+        paint.write(preview_y + 2, 1, os.getcwd(), theme.muted)
+        paint.write(preview_y + 3, 1, "Start a fresh session with " + AGENT_LABELS.get(agent, agent),
+                    theme.muted)
+    elif visible:
         item = visible[selected]
         paint.write(preview_y + 1, 1, item.title, curses.A_BOLD)
         paint.write(preview_y + 2, 1, str(item.directory or "Directory not recorded"), theme.muted)
-        paint.write(preview_y + 3, 1, "Previously worked on with " + last_agent(item) if item.sessions
-                    else "No native conversation recorded", theme.muted)
+        if item.sessions:
+            paint.write(preview_y + 3, 1, "Last used: ", theme.muted)
+            paint.write(preview_y + 3, 12, last_agent(item), theme.previous_agent)
+        else:
+            paint.write(preview_y + 3, 1, "No native conversation recorded", theme.muted)
         if item.summary:
             prefix = 'Review may be stale: ' if item.summary_stale else 'Summary: '
             paint.write(preview_y + 4, 1, prefix + item.summary, theme.muted)
         else:
             paint.write(preview_y + 4, 1, item.detail or item.status,
                         theme.status(item.status))
-    paint.keys(height - 4, [("n", "new"), ("Enter", "resume"), ("↑↓", "move"),
+    enter_label = "start" if visible and visible[selected] is None else "resume"
+    paint.keys(height - 4, [("n", "new"), ("Enter", enter_label), ("↑↓", "move"),
                             ("/", "search"), ("q", "quit")], theme)
     paint.keys(height - 3, [("s", "summary"), ("c", "done/open"), ("a", "archive"), ("r", "rename"),
                             ("u", "undo")], theme)
@@ -222,7 +243,7 @@ def help_screen(screen, theme: Theme) -> None:
     lines = [
         ('n', 'New conversation in your current Terminal directory'),
         ('↑↓ / jk', 'Select a project'),
-        ('Enter', 'Resume; also opens the selected search result'),
+        ('Enter', 'Start New conversation, or resume the selected project'),
         ('Tab', 'Change the agent to continue with: Codex / Claude / Copilot'),
         ('/', 'Search project names, lifecycle, and directories'),
         ('s', 'Agent summary and suggested names; review before saving'),
@@ -254,6 +275,8 @@ def choose(screen, catalog: Catalog, agent: str, notice: str = '',
     while True:
         visible = [p for p in projects if query.casefold() in
                    f"{p.title} {p.status} {p.directory or ''}".casefold()]
+        if not searching and not query:
+            visible.insert(0, None)
         selected = max(0, min(selected, len(visible) - 1))
         project = visible[selected] if visible else None
         footer = notice or (catalog.warnings[0] if catalog.warnings else "")
@@ -353,7 +376,7 @@ def choose(screen, catalog: Catalog, agent: str, notice: str = '',
             selected = (selected - 1) % len(visible)
         elif key in (curses.KEY_DOWN, "j") and visible:
             selected = (selected + 1) % len(visible)
-        elif key in ("\n", "\r", curses.KEY_ENTER) and project:
+        elif key in ("\n", "\r", curses.KEY_ENTER) and visible:
             if available:
                 return Selection(agent, project)
             notice = 'Agent unavailable. Press Tab to select an installed agent.'

@@ -1,10 +1,11 @@
+import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_launchpad.launch import build_command, launch
+from agent_launchpad.launch import build_command, handoff_prompt, launch
 from agent_launchpad.projects import Catalog
 from helpers import claude, codex, paths
 
@@ -27,6 +28,22 @@ class LaunchTests(unittest.TestCase):
         args = build_command("/bin/claude", "claude", None, file, "new-id")
         self.assertEqual(args[:3], ["/bin/claude", "--session-id", "new-id"])
 
+    def test_handoff_identifies_selected_project_for_every_agent(self):
+        self.project.title = 'Fix "search" 日本語'
+        self.project.summary = 'Keep the selected result visible.'
+        for agent in ('codex', 'claude', 'copilot'):
+            args = build_command(agent, agent, None, Path('/notes'), project=self.project)
+            prompt = args[-1]
+            self.assertTrue(prompt.startswith('[Agent Project Launchpad handoff]\nProject: '))
+            self.assertIn(json.dumps(self.project.title, ensure_ascii=False), prompt)
+            self.assertIn('Summary: "Keep the selected result visible."', prompt)
+            self.assertIn('Wait for the user’s next request', prompt)
+        self.project.summary_stale = True
+        self.assertIn('Saved summary (may be stale):',
+                      handoff_prompt(Path('/notes'), project=self.project))
+        self.project.summary = ''
+        self.assertNotIn('Summary:', handoff_prompt(Path('/notes'), project=self.project))
+
     def test_session_identity_cannot_inject_flags(self):
         with self.assertRaisesRegex(ValueError, "CLI flag"):
             build_command("codex", "codex", "--dangerously-skip-permissions", Path("/notes"))
@@ -38,6 +55,7 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(launch(self.catalog, self.project, "codex"), 0)
         self.assertEqual(call.call_args.args[0][:3], ["/fake/codex", "resume", "one"])
         self.assertEqual(call.call_args.kwargs["cwd"], self.root)
+        self.assertIn('Project: "Example"', call.call_args.args[0][-1])
         self.assertEqual(self.catalog.find(self.project.id).status, 'Completed')
 
     @patch("agent_launchpad.launch.shutil.which", return_value="/fake/claude")

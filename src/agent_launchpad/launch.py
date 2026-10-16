@@ -1,5 +1,6 @@
 """Use documented CLI arguments; never shell-interpolate project content."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -13,9 +14,18 @@ from .models import AGENTS, Project
 from .projects import Catalog
 
 
-def handoff_prompt(file: Path, packet: Path | None = None) -> str:
+def handoff_prompt(file: Path, packet: Path | None = None,
+                   project: Project | None = None) -> str:
+    identity = ""
+    if project is not None:
+        identity = f"Project: {json.dumps(project.title, ensure_ascii=False)}\n"
+        if project.summary:
+            label = "Saved summary (may be stale)" if project.summary_stale else "Summary"
+            identity += f"{label}: {json.dumps(project.summary, ensure_ascii=False)}\n"
+        identity += "\n"
     return (
-        f"[Agent Project Launchpad handoff]\nResume this project. First read the shared handoff at {file}. "
+        "[Agent Project Launchpad handoff]\n" + identity +
+        f"Resume this project. First read the shared handoff at {file}. "
         + (f"Also read the freshly generated context packet at {packet}; it records recent dialogue, "
            "source timestamps, and context gaps. Reconcile the latest evidence with the handoff. "
            if packet else '') +
@@ -41,7 +51,8 @@ def executable(agent: str) -> list[str]:
 
 
 def build_command(binary: str | list[str], agent: str, native_id: str | None, file: Path,
-                  new_id: str | None = None, packet: Path | None = None) -> list[str]:
+                  new_id: str | None = None, packet: Path | None = None,
+                  project: Project | None = None) -> list[str]:
     if agent not in AGENTS:
         raise ValueError(f"Unsupported agent: {agent}")
     if native_id is not None and (not native_id or native_id.startswith("-")):
@@ -49,12 +60,12 @@ def build_command(binary: str | list[str], agent: str, native_id: str | None, fi
     args = [binary] if isinstance(binary, str) else list(binary)
     if agent == "copilot":
         args += ["--session-id", native_id or new_id] if native_id or new_id else []
-        return args + ["--interactive", handoff_prompt(file, packet)]
+        return args + ["--interactive", handoff_prompt(file, packet, project)]
     if native_id:
         args += ["resume", native_id] if agent == "codex" else ["--resume", native_id]
     elif agent == "claude" and new_id:
         args += ["--session-id", new_id]
-    args += [handoff_prompt(file, packet)]
+    args += [handoff_prompt(file, packet, project)]
     return args
 
 
@@ -103,7 +114,7 @@ def launch(catalog: Catalog, project: Project | None, agent: str) -> int:
         packet = create_packet(catalog, catalog.find(project.id))
         try:
             return subprocess.call(
-                build_command(binary, agent, native_id, file, new_id, packet), cwd=directory,
+                build_command(binary, agent, native_id, file, new_id, packet, project), cwd=directory,
             )
         finally:
             _record_exit(catalog, project, agent, native_id, new_id, before,
