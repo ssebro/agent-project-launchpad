@@ -1,13 +1,14 @@
 # Agent Project Launchpad
 
-**Switch agents. Keep your place.**
+**Pick up your work with Codex, Claude Code, or GitHub Copilot CLI.**
 
-Run `codex`, `claude`, or `gh copilot` as usual. Pick a project, see where it stands,
-and continue with the agent you choose.
+A keyboard-first terminal picker for your agent projects. See what you were
+working on, when you last touched it, and where you left off. Switch agents
+with shared project notes and recent conversation context carried along.
 
-The launcher resumes native sessions and carries shared project notes and recent
-conversation context between Codex, Claude Code, and GitHub Copilot CLI. You can
-also ask an agent for a progress summary and a clearer project name.
+Type `claude`, `codex`, or `gh copilot` as usual. Pick a project and press Enter
+to continue, or press Tab to switch agents. Your existing conversations appear
+automatically.
 
 ![Agent Project Launchpad picker showing projects, lifecycle status, agent switching, and keyboard controls](docs/preview.png)
 
@@ -22,16 +23,24 @@ pipx install git+https://github.com/ssebro/agent-project-launchpad.git
 agent-launchpad setup
 ```
 
-**Open a new Terminal, then type your usual agent command. The picker should appear.**
+Open a new Terminal and start your agent as usual:
 
-`setup` is the core installation step: it adds startup integration for bash/zsh,
-backs up the file it changes, and preserves the original agent commands.
+```sh
+claude       # Open the picker with Claude Code selected
+codex        # Open it with Codex selected
+gh copilot   # Open it with GitHub Copilot selected
+```
+
+Choose a project with ↑/↓ and press Enter, or press `n` to start something new.
+
+`setup` enables the picker for your normal commands in bash/zsh and backs up
+the startup file it changes. You only need to run it once.
 Check the installation with `agent-launchpad check-shell`.
 
 Need [pipx](https://pipx.pypa.io/) or prefer a virtual environment?
 See the [installation guide](docs/guide.md#install).
 
-## Try it
+## Try the demo
 
 ```sh
 agent-launchpad demo

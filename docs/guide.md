@@ -2,15 +2,10 @@
 
 **Pick up your work with Codex, Claude Code, or GitHub Copilot CLI.**
 
-A keyboard-first terminal picker for your local agent conversations. See what you
-were working on, when you last touched it, and where you left off. Switch tools
-without reconstructing project context from scratch.
-
-
-Agent Project Launchpad discovers existing local conversations, resumes each tool's native
-session, and maintains a shared Markdown handoff for each project. **It does not
-convert chat histories between agents.** On the first switch, the receiving agent
-is asked to read the handoff and relevant original local transcript messages.
+Type `claude`, `codex`, or `gh copilot` as usual. Agent Project Launchpad shows
+your existing projects, when you last worked on them, and where you left off.
+Choose one and press Enter to continue. Press Tab to switch agents, carrying
+shared project notes and recent conversation context with you.
 
 ## Install
 
@@ -35,19 +30,31 @@ python3 -m venv .venv
 .venv/bin/agent-launchpad setup
 ```
 
-The project is not published on PyPI. Package installation does not change your shell. Run `setup` to enable integration;
-it does not replace agent binaries.
+`setup` is part of installation: it enables the picker for your normal agent
+commands in bash/zsh, backing up the startup file before changing it. Run it once,
+then open a new Terminal. If you installed in a virtual environment, it does not
+need to stay activated.
 
-## Use it
+The package is installed from GitHub; it is not published on PyPI.
+
+## Pick up your work
+
+In a new Terminal, use whichever agent you want to work with:
 
 ```sh
-agent-launchpad                    # Start the picker with Codex selected
-agent-launchpad --agent claude     # Start with Claude Code selected
-agent-launchpad --agent copilot    # Start with GitHub Copilot selected
-agent-launchpad list               # Script-friendly tab-separated listing
-agent-launchpad list --json        # Include IDs, directories, and native session links
-agent-launchpad doctor             # Paths, discovery warnings, and available tools
+claude       # Open the picker with Claude Code selected
+codex        # Open it with Codex selected
+gh copilot   # Open it with GitHub Copilot selected
 ```
+
+Existing local conversations appear automatically. Use ↑/↓ to choose a project
+and Enter to resume it. To continue with another agent, press Tab before Enter.
+Press `n` to start a new conversation in your current Terminal directory.
+Standalone `copilot` also opens the picker when installed.
+
+Commands with arguments, such as `claude --help` or `codex exec ...`, keep their
+normal behavior. If the picker does not appear, run `agent-launchpad check-shell`;
+see [shell setup details](#shell-setup-details) below.
 
 | Key | Action |
 | --- | --- |
@@ -109,9 +116,9 @@ For scripts, `agent-launchpad --agent claude review ID --json` prints suggestion
 without applying them. `list --json` includes previously saved summaries without
 calling a model.
 
-### Enable the launcher for your normal agent commands
+### Shell setup details
 
-Shell integration is the core installation step. After installing the package, run:
+If you skipped setup during installation, enable the picker with:
 
 ```sh
 agent-launchpad setup
@@ -152,21 +159,16 @@ on first use. This supports the current agentic Copilot CLI, not the retired
 
 ### Shared handoffs
 
-Select a project and resume it, or create its handoff explicitly:
+Type your normal agent command, select a project, and press Enter. The launcher
+creates or refreshes its shared handoff automatically. To switch agents, select
+the same project, press Tab to choose the receiving agent, and press Enter.
 
-```sh
-agent-launchpad list --json
-agent-launchpad handoff 'codex:YOUR-SESSION-ID'
-agent-launchpad set 'codex:YOUR-SESSION-ID' --name 'Release checklist' --status completed
-agent-launchpad --agent claude resume 'codex:YOUR-SESSION-ID'
-```
-
-Use the actual ID from `list`; unique ID prefixes also work. A handoff contains
-the goal, decisions, findings, changed files, validation, and next steps. You can
+A handoff contains the goal, decisions, findings, changed files, validation, and
+next steps. You can
 edit it yourself. A `Status: ...` line provides an optional progress note in the
 preview; it does not control Active/Completed/Archived. Every resume
 asks the agent to read and maintain the handoff. This is an instruction, not a
-guarantee: check the notes when switching tools. Agent Project Launchpad does not run a
+guarantee: check the notes when switching agents. Agent Project Launchpad does not run a
 background model to summarize your work. New (`n`) starts a normal native
 conversation; shared handoff instructions are added on its first picker resume.
 
@@ -175,6 +177,24 @@ launches resume that conversation through a stored link. Claude and Copilot use
 explicit session IDs. New Codex sessions are linked after the process exits only
 when exactly one newly discovered session matches the working directory. An
 ambiguous match is left unlinked and reported. See [limitations](compatibility.md).
+
+### Direct commands and scripting
+
+Everyday use starts with `claude`, `codex`, or `gh copilot`. The `agent-launchpad`
+command also provides diagnostics, scripting, and direct access to the picker:
+
+```sh
+agent-launchpad --agent claude     # Open the picker directly
+agent-launchpad list               # Tab-separated project listing
+agent-launchpad list --json        # IDs, directories, native links, saved summaries
+agent-launchpad doctor             # Tool paths and discovery warnings
+agent-launchpad handoff ID         # Create or locate a project's shared notes
+agent-launchpad --agent claude resume ID
+```
+
+Use an actual project ID from `list`; unique ID prefixes also work. These commands
+are alternatives for scripts and troubleshooting; they are not needed to resume
+projects through your usual agent commands.
 
 ## Local data and privacy
 
