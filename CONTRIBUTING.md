@@ -73,5 +73,4 @@ Contributions are under the repository's MIT license.
 
 ## Releases
 
-See [the release checklist](docs/releasing.md). Version 0.x reflects that native
-history formats can change and adapters may need updates.
+See [the release checklist](docs/releasing.md). Native history formats can change; adapters and compatibility notes must stay current.

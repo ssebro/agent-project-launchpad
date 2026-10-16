@@ -17,10 +17,10 @@ you worked on with another agent. The preview shows who you last used;
 
 ## Install and enable
 
-Requires macOS or Linux, Python 3.10+, and at least one agent already installed.
+Requires macOS or Linux, Python 3.10+, and an installed agent.
 
 ```sh
-pipx install git+https://github.com/ssebro/agent-project-launchpad.git
+pipx install git+https://github.com/ssebro/agent-project-launchpad.git@v1.0.0
 agent-launchpad setup
 ```
 
