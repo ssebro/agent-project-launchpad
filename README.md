@@ -7,8 +7,9 @@ working on, when you last touched it, and where you left off. Switch agents
 with shared project notes and recent conversation context carried along.
 
 Type `claude`, `codex`, or `gh copilot` as usual. Pick a project and press Enter
-to continue, or press Tab to switch agents. Your existing conversations appear
-automatically.
+to continue. Your existing conversations appear automatically, including projects
+you worked on with another agent. The preview shows who you last used;
+“Continue with” shows who will pick up the work.
 
 ![Agent Project Launchpad picker showing projects, lifecycle status, agent switching, and keyboard controls](docs/preview.png)
 
@@ -54,7 +55,7 @@ no model requests, and leaves your existing sessions alone.
 | Key | Action |
 | --- | --- |
 | `↑` / `↓`, `Enter` | Select and continue a project |
-| `Tab` | Switch agent |
+| `Tab` | Change the agent to continue with |
 | `n` | Start something new |
 | `/` | Search |
 | `s` | Generate a summary and suggested names; review before saving |

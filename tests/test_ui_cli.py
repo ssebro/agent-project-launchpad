@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent_launchpad.cli import main, shell_init
+from agent_launchpad.models import Session
 from agent_launchpad.projects import Catalog
 from agent_launchpad.ui import Theme, choose, fit, render, text_width
 from helpers import codex, paths
@@ -137,6 +138,18 @@ class UITests(unittest.TestCase):
         self.assertEqual([y for y, _style in titles], [6, 7])
         keys = [style for _y, _x, text, style in screen.lines if text == ' n ']
         self.assertEqual(keys, [theme.key])
+
+    def test_last_agent_is_latest_native_activity_not_chosen_destination(self):
+        project = self.catalog.load()[0]
+        project.sessions['claude'] = Session('claude', 'newer', 'First', None, 300)
+        project.sessions['copilot'] = Session('copilot', 'older', 'First', None, 150)
+        for width in (80, 100, 120):
+            screen = Screen([], (24, width))
+            render(screen, [project], 0, 1, 'codex', '', False, '', Theme())
+            texts = [text for _y, _x, text, _style in screen.lines]
+            self.assertIn('Continue with Codex', texts)
+            self.assertIn('Previously worked on with Claude Code', texts)
+            self.assertNotIn('LAST AGENT', texts)
 
     def test_status_palette_and_no_color(self):
         theme = Theme(success=1, warning=2, danger=3, ready=4, muted=5)

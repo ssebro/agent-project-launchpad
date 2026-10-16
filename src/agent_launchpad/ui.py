@@ -128,6 +128,16 @@ class Painter:
             x += len(label) + 2
 
 
+AGENT_LABELS = {"codex": "Codex", "claude": "Claude Code", "copilot": "GitHub Copilot"}
+
+
+def last_agent(project: Project) -> str:
+    if not project.sessions:
+        return "Unknown"
+    latest = max(project.sessions.values(), key=lambda session: session.updated)
+    return AGENT_LABELS.get(latest.agent, latest.agent)
+
+
 def render(screen, visible: list[Project], selected: int, total: int, agent: str,
            query: str, searching: bool, message: str, theme: Theme,
            available: bool = True) -> None:
@@ -136,9 +146,13 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     paint = Painter(screen)
     height, width = paint.height, paint.width
     paint.write(0, 1, "Agent Project Launchpad", theme.accent)
-    paint.write(0, max(25, width - 29), f"{agent.upper()}{'' if available else ' unavailable'}", theme.accent)
-    paint.write(1, max(18, width - 29), ' Tab ', theme.key)
-    paint.write(1, max(18, width - 29) + 6, 'switch agent', theme.muted)
+    destination = "Continue with " + AGENT_LABELS.get(agent, agent)
+    if not available:
+        destination += " (unavailable)"
+    action_width = 23 if width >= 65 else 12
+    paint.write(1, 1, destination, theme.accent, width=max(1, width - action_width - 2))
+    paint.write(1, width - action_width, ' Tab ', theme.key)
+    paint.write(1, width - action_width + 6, 'change agent' if width >= 65 else 'change', theme.muted)
     paint.write(2, 1, " / ", theme.key if searching else theme.accent)
     paint.write(2, 5, query + ("▏" if searching else "") if query or searching
                 else "Search projects…", 0 if query or searching else theme.muted)
@@ -152,7 +166,7 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
     for x, label in ((3, "PROJECT"), (status_x, "STATUS"), (date_x, "UPDATED")):
         paint.write(4, x, label, theme.muted)
     paint.write(5, 1, "─" * (width - 3), theme.muted)
-    preview_y = height - 8
+    preview_y = height - 9
     capacity = max(1, preview_y - 6)
     start = max(0, selected - capacity + 1)
     for index in range(start, min(len(visible), start + capacity)):
@@ -176,12 +190,13 @@ def render(screen, visible: list[Project], selected: int, total: int, agent: str
         item = visible[selected]
         paint.write(preview_y + 1, 1, item.title, curses.A_BOLD)
         paint.write(preview_y + 2, 1, str(item.directory or "Directory not recorded"), theme.muted)
-        native = " · ".join(item.sessions) or "No native session"
+        paint.write(preview_y + 3, 1, "Previously worked on with " + last_agent(item) if item.sessions
+                    else "No native conversation recorded", theme.muted)
         if item.summary:
             prefix = 'Review may be stale: ' if item.summary_stale else 'Summary: '
-            paint.write(preview_y + 3, 1, prefix + item.summary, theme.muted)
+            paint.write(preview_y + 4, 1, prefix + item.summary, theme.muted)
         else:
-            paint.write(preview_y + 3, 1, "History: " + native + "  |  " + (item.detail or item.status),
+            paint.write(preview_y + 4, 1, item.detail or item.status,
                         theme.status(item.status))
     paint.keys(height - 4, [("n", "new"), ("Enter", "resume"), ("↑↓", "move"),
                             ("/", "search"), ("q", "quit")], theme)
@@ -208,7 +223,7 @@ def help_screen(screen, theme: Theme) -> None:
         ('n', 'New conversation in your current Terminal directory'),
         ('↑↓ / jk', 'Select a project'),
         ('Enter', 'Resume; also opens the selected search result'),
-        ('Tab', 'Switch Codex / Claude / Copilot'),
+        ('Tab', 'Change the agent to continue with: Codex / Claude / Copilot'),
         ('/', 'Search project names, lifecycle, and directories'),
         ('s', 'Agent summary and suggested names; review before saving'),
         ('r', 'Edit project name; Ctrl-U clears the field'),

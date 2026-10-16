@@ -4,8 +4,9 @@
 
 Type `claude`, `codex`, or `gh copilot` as usual. Agent Project Launchpad shows
 your existing projects, when you last worked on them, and where you left off.
-Choose one and press Enter to continue. Press Tab to switch agents, carrying
-shared project notes and recent conversation context with you.
+Choose one and press Enter to continue with the agent you launched. Shared
+project notes and recent conversation context carry along, including when
+the project was previously worked on with another agent.
 
 ## Install
 
@@ -48,7 +49,10 @@ gh copilot   # Open it with GitHub Copilot selected
 ```
 
 Existing local conversations appear automatically. Use ↑/↓ to choose a project
-and Enter to resume it. To continue with another agent, press Tab before Enter.
+and Enter to continue with the agent you launched. The header says “Continue
+with Codex” (or your chosen agent); the project preview shows which agent most
+recently worked on it. If that changes your choice, press Tab to change the
+agent you will continue with.
 Press `n` to start a new conversation in your current Terminal directory.
 Standalone `copilot` also opens the picker when installed.
 
@@ -61,7 +65,7 @@ see [shell setup details](#shell-setup-details) below.
 | `n` | Start a new conversation immediately, in the current Terminal directory |
 | `↑` / `↓` or `k` / `j` | Select a project |
 | `Enter` | Resume the selected project with the selected tool |
-| `Tab` | Cycle Codex → Claude Code → Copilot |
+| `Tab` | Change the agent to continue with: Codex → Claude Code → Copilot |
 | `/` | Filter by project name, status, or directory |
 | `r` | Rename the project in this picker |
 | `s` | Ask the selected agent for a progress summary and suggested names |
@@ -74,8 +78,10 @@ Names come from the native session title or first prompt until you rename them.
 Status tracks the lifecycle: **Active, Completed, or Archived**, not live running/idle activity. Dates are
 local time and reflect the latest native session or shared-handoff modification.
 Distinct tasks in the same directory remain separate projects. Rows are compact:
-project name, status, then date. The full selected name and directory appear in
-the preview. Narrow terminals shorten the date and keep one line per project.
+project name, status, then date. The preview shows the full selected name,
+directory, and which agent most recently worked on the project, based on native
+conversation activity. That history is separate from the agent you choose to
+continue with. Narrow terminals shorten the date and keep one line per project.
 Color distinguishes the selection, command keycaps, and lifecycle; text
 labels and a selection marker also work in monochrome. Set `NO_COLOR=1` to opt out.
 
@@ -160,8 +166,9 @@ on first use. This supports the current agentic Copilot CLI, not the retired
 ### Shared handoffs
 
 Type your normal agent command, select a project, and press Enter. The launcher
-creates or refreshes its shared handoff automatically. To switch agents, select
-the same project, press Tab to choose the receiving agent, and press Enter.
+creates or refreshes its shared handoff automatically. To pick up a Claude
+project with Codex, type `codex`, select that project, and press Enter. You can
+also change the receiving agent with Tab while browsing the picker.
 
 A handoff contains the goal, decisions, findings, changed files, validation, and
 next steps. You can
