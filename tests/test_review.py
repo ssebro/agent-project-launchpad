@@ -134,7 +134,10 @@ class ReviewTests(unittest.TestCase):
             self.assertEqual(generate(self.catalog, self.project, 'copilot'), self.suggestion)
         args = call.call_args.args[0]
         self.assertIn('--available-tools', args)
-        self.assertEqual(args[args.index('--deny-tool') + 1], '*')
+        deny_start = args.index('--deny-tool') + 1
+        self.assertEqual(args[deny_start:deny_start + 3], ['shell', 'write', 'url'])
+        self.assertIn('--disable-builtin-mcps', args)
+        self.assertIn('--no-custom-instructions', args)
         self.assertEqual(len(self.catalog.store.read()['review_sessions']), 1)
 
     @patch('agent_launchpad.review.executable', return_value=['/fake/claude'])

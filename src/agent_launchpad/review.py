@@ -112,7 +112,9 @@ def generate(catalog: Catalog, project: Project, agent: str) -> Suggestion:
             with catalog.store.edit() as state:
                 state.setdefault('review_sessions', []).append('copilot:' + native_id)
             args = binary + ['--session-id', native_id, '--available-tools',
-                             '--deny-tool', '*', '--silent', '--prompt', prompt]
+                             '--deny-tool', 'shell', 'write', 'url',
+                             '--disable-builtin-mcps', '--no-custom-instructions',
+                             '--silent', '--prompt', prompt]
         result = subprocess.run(args, input=prompt if agent != 'copilot' else None,
                                 cwd=root, capture_output=True, text=True, timeout=180)
         if result.returncode:

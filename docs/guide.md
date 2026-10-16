@@ -74,7 +74,11 @@ see [shell setup details](#shell-setup-details) below.
 | `u` | Restore the last archived project, including after a restart |
 | `q` | Quit |
 
-Names come from the native session title or first prompt until you rename them.
+Names follow the most recent descriptive native session title or first prompt
+until you choose a name yourself. Generic handoff titles such as “Resume This
+Project” are excluded. A real conversation can provide a better native title;
+opening and leaving an agent cannot. Use `s` for an agent's naming suggestions
+and review them before saving.
 Status tracks the lifecycle: **Active, Completed, or Archived**, not live running/idle activity. Dates are
 local time and reflect the latest native session or shared-handoff modification.
 Distinct tasks in the same directory remain separate projects. Rows are compact:
@@ -87,7 +91,11 @@ labels and a selection marker also work in monochrome. Set `NO_COLOR=1` to opt o
 
 Discovered projects are Active automatically; there is no status field to fill
 out. Press `c` when work is complete, and `c` again to reopen it. Resuming a project
-marks it Active. New native session activity after completion also makes it Active
+marks it Active when you make a new request. Opening an agent, reading the
+automatic handoff, and leaving does not change the name, last agent, update date,
+or completion status. If the transcript is unavailable or incomplete, the launcher
+keeps the last known activity and reports that uncertainty. A discussion or review counts as work even without file
+edits. New native session activity after completion also makes it Active
 at the next discovery. Handoff edits alone do not reopen completed work.
 
 **Archive is reversible:** it hides the project from all three pickers. Native

@@ -1,7 +1,9 @@
 """Join native histories through explicit project links and shared Markdown."""
 
+from dataclasses import replace
 from pathlib import Path
 
+from .activity import EMPTY_ACTIVITY, is_handoff_title, user_activity
 from .config import Paths
 from .discovery import discover_claude, discover_codex, discover_copilot
 from .models import Project
@@ -34,6 +36,19 @@ class Catalog:
                     continue
                 project_id = owners.get(session.key, session.key)
                 record = records.get(project_id, {})
+                idle = record.get('idle_sessions', {}).get(session.key)
+                signature = None
+                if idle or session.key != project_id:
+                    signature = user_activity(session)
+                if idle and (signature is None or signature == idle['signature']
+                             or (signature == EMPTY_ACTIVITY and not idle['signature'])):
+                    session = replace(session, updated=idle['updated'], title=idle.get('title', session.title))
+                    if signature is None:
+                        self.warnings.append(f'{session.agent} activity is unavailable or incomplete; '
+                                             'keeping its last known activity.')
+                elif signature == EMPTY_ACTIVITY and session.key != project_id:
+                    # Also recognize bootstrap-only links made by older versions.
+                    session = replace(session, updated=0)
                 if project_id not in projects:
                     projects[project_id] = Project(
                         project_id, str(record.get("title") or session.title),
@@ -47,11 +62,18 @@ class Catalog:
                 project.sessions[session.agent] = session
         for project in projects.values():
             record = records.get(project.id, {})
+            # An explicit name wins. Otherwise prefer the most recent descriptive
+            # native title from real work, independent of discovery order.
+            if not record.get('title'):
+                candidates = [s for s in project.sessions.values()
+                              if s.updated > 0 and not is_handoff_title(s.title)]
+                if candidates:
+                    project.title = max(candidates, key=lambda s: s.updated).title
             lifecycle = record.get("lifecycle", "active")
             if lifecycle == "completed":
                 baseline = record.get("completed_updates", {})
                 changed = any(
-                    session.updated > baseline.get(session.key, -1)
+                    session.updated > 0 and session.updated > baseline.get(session.key, -1)
                     for session in project.sessions.values()
                 )
                 project.status = "Active" if changed else "Completed"
@@ -62,14 +84,19 @@ class Catalog:
             project.summary = str(record.get('summary') or '')
             reviewed = record.get('review_source_updates', {})
             project.summary_stale = bool(project.summary) and any(
-                session.updated > reviewed.get(session.key, -1)
+                session.updated > 0 and session.updated > reviewed.get(session.key, -1)
                 for session in project.sessions.values()
             )
             handoff = self.store.handoff(project.id)
             try:
                 if handoff.exists():
-                    project.updated = max(project.updated, handoff.stat().st_mtime)
-                    if project.summary and handoff.stat().st_mtime > record.get('reviewed_at', 0):
+                    modified = handoff.stat().st_mtime
+                    ignored = modified == record.get('idle_handoff_mtime')
+                    if ignored:
+                        project.updated = max(project.updated, record.get('idle_handoff_updated', 0))
+                    else:
+                        project.updated = max(project.updated, modified)
+                    if not ignored and project.summary and modified > record.get('reviewed_at', 0):
                         project.summary_stale = True
                     for line in handoff.read_text(encoding="utf-8").splitlines():
                         if line.startswith("Status: "):

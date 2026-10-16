@@ -10,6 +10,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from .activity import is_handoff_title
 from .models import Discovery, Session
 
 
@@ -108,11 +109,13 @@ def discover_claude(home: Path) -> Discovery:
                         directory = optional_path(event.get("cwd")) or directory
                         native_id = event.get("sessionId") or native_id
                     if event.get("type") == "summary" and event.get("summary"):
-                        title = str(event["summary"])
+                        if not is_handoff_title(str(event['summary'])):
+                            title = str(event["summary"])
                     elif not title and event.get("type") == "user":
                         message = event.get("message", {})
                         content = message.get("content") if isinstance(message, dict) else None
-                        if isinstance(content, str) and not content.startswith("<"):
+                        if (isinstance(content, str) and not content.startswith("<")
+                                and not is_handoff_title(content)):
                             title = content[:200]
             if has_main:
                 # The UUID filename is the native session identifier. Do not link
@@ -158,7 +161,7 @@ def discover_copilot(home: Path | None) -> Discovery:
                             directory = optional_path(context.get("cwd")) or directory
                     elif event.get("type") == "user.message" and not title:
                         content = data.get("content")
-                        if isinstance(content, str):
+                        if isinstance(content, str) and not is_handoff_title(content):
                             title = content[:200]
             if not started:
                 continue

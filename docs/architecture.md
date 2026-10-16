@@ -18,6 +18,7 @@ Local metadata + Markdown handoffs ───────────────
 | --- | --- |
 | `config.py` | Resolve user-controlled data and history locations |
 | `integration.py` | Set up, check, and remove the core shell startup integration |
+| `activity.py` | Fingerprint user requests to distinguish work from automatic handoff visits |
 | `context.py` | Extract bounded dialogue and refresh cross-agent context before resume |
 | `models.py` | Session, project, and discovery result types |
 | `discovery.py` | Read-only format adapters; return sessions and warnings |
@@ -40,7 +41,8 @@ invitation to guess.
 Renames and lifecycle are launcher metadata. New discoveries default to Active.
 Completion records the last native update for each associated session. If native
 activity advances past that baseline, the project is displayed as Active again.
-Resuming explicitly sets Active. Archive hides the project and records the prior
+A resume with a new user request sets Active. Bootstrap-only visits preserve
+the prior lifecycle, activity timestamps, last agent, and summary freshness. Archive hides the project and records the prior
 lifecycle for undo. Native activity never silently unarchives a project.
 
 The handoff's `Status:` line is an optional progress note in the preview, separate
@@ -103,3 +105,22 @@ without replacing other notes. Native update baselines and handoff mtime track
 whether a saved summary may be stale. Summaries do not control lifecycle. Copilot's
 separate review-session IDs are kept in metadata so its generated review history
 does not clutter the project list; native files are not deleted.
+
+## Empty visits and display titles
+
+An automatic handoff prompt and its assistant replies are setup, not new user
+work. Native session links are retained for resume, but an unchanged user-request
+fingerprint keeps the previous activity timestamp (zero for an unused new link).
+Later user requests, including ones made outside the launcher, invalidate that
+baseline. Missing, unreadable, empty, or partially written transcripts remain
+unknown rather than proving an empty visit or new work. Unknown evidence preserves
+last-known activity and completion metadata with a discovery warning. Exit
+reconciliation runs in `finally`, so Ctrl-C still associates an unambiguous new
+Codex session and records any real requests made before interruption.
+Only launcher metadata changes; native conversations are never rewritten.
+
+An explicit display name takes precedence. Otherwise the most recent descriptive
+native title from work is used, excluding known generic handoff titles. This is
+a conservative selection rule, not model-based comparison of competing names;
+the on-demand summary review can propose a more meaningful name for the user to
+accept. A no-op does not freeze future title updates from genuine work.
