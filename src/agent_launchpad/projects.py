@@ -40,8 +40,12 @@ class Catalog:
                 signature = None
                 if idle or session.key != project_id:
                     signature = user_activity(session)
-                if idle and signature == idle['signature']:
-                    session = replace(session, updated=idle['updated'])
+                if idle and (signature is None or signature == idle['signature']
+                             or (signature == EMPTY_ACTIVITY and not idle['signature'])):
+                    session = replace(session, updated=idle['updated'], title=idle.get('title', session.title))
+                    if signature is None:
+                        self.warnings.append(f'{session.agent} activity is unavailable or incomplete; '
+                                             'keeping its last known activity.')
                 elif signature == EMPTY_ACTIVITY and session.key != project_id:
                     # Also recognize bootstrap-only links made by older versions.
                     session = replace(session, updated=0)

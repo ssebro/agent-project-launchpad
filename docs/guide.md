@@ -93,7 +93,8 @@ Discovered projects are Active automatically; there is no status field to fill
 out. Press `c` when work is complete, and `c` again to reopen it. Resuming a project
 marks it Active when you make a new request. Opening an agent, reading the
 automatic handoff, and leaving does not change the name, last agent, update date,
-or completion status. A discussion or review counts as work even without file
+or completion status. If the transcript is unavailable or incomplete, the launcher
+keeps the last known activity and reports that uncertainty. A discussion or review counts as work even without file
 edits. New native session activity after completion also makes it Active
 at the next discovery. Handoff edits alone do not reopen completed work.
 

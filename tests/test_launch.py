@@ -33,12 +33,12 @@ class LaunchTests(unittest.TestCase):
 
     @patch("agent_launchpad.launch.shutil.which", return_value="/fake/codex")
     @patch("agent_launchpad.launch.subprocess.call", return_value=0)
-    def test_resume_original_codex(self, call, _which):
+    def test_resume_original_codex_without_activity_preserves_completion(self, call, _which):
         self.catalog.toggle_completed(self.project)
         self.assertEqual(launch(self.catalog, self.project, "codex"), 0)
         self.assertEqual(call.call_args.args[0][:3], ["/fake/codex", "resume", "one"])
         self.assertEqual(call.call_args.kwargs["cwd"], self.root)
-        self.assertEqual(self.catalog.find(self.project.id).status, 'Active')
+        self.assertEqual(self.catalog.find(self.project.id).status, 'Completed')
 
     @patch("agent_launchpad.launch.shutil.which", return_value="/fake/claude")
     def test_switch_to_claude_records_only_created_transcript_then_resumes(self, _which):

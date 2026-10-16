@@ -154,6 +154,106 @@ class IdleResumeTests(unittest.TestCase):
         self.assertFalse(after.summary_stale)
         self.assertEqual(after.summary, 'Review next steps.')
 
+    def test_ctrl_c_links_new_codex_session_without_inventing_activity(self):
+        self.catalog.toggle_completed(self.project)
+        before = self.catalog.find(self.project.id)
+        def interrupt(args, **_kwargs):
+            self.write_session('codex', 'interrupted', args[-1])
+            raise KeyboardInterrupt
+        with patch('agent_launchpad.launch.executable', return_value=['/fake/codex']), \
+             patch('agent_launchpad.launch.subprocess.call', side_effect=interrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                launch(self.catalog, before, 'codex')
+        after = Catalog(self.paths).find(self.project.id)
+        self.assertEqual(after.sessions['codex'].native_id, 'interrupted')
+        self.assertEqual(len(self.catalog.load()), 1)
+        self.assertEqual(after.updated, before.updated)
+        self.assertEqual(after.status, 'Completed')
+        self.assertEqual(last_agent(after), 'Claude Code')
+        with patch('agent_launchpad.launch.executable', return_value=['/fake/codex']), \
+             patch('agent_launchpad.launch.subprocess.call', return_value=0) as call:
+            launch(self.catalog, after, 'codex')
+        self.assertEqual(call.call_args.args[0][1:3], ['resume', 'interrupted'])
+
+    def test_ctrl_c_preserves_real_user_work_in_the_new_session(self):
+        self.catalog.toggle_completed(self.project)
+        before = self.catalog.find(self.project.id)
+        def interrupt(args, **_kwargs):
+            self.write_session('codex', 'interrupted-work', args[-1], 'Review the failing test.')
+            raise KeyboardInterrupt
+        with patch('agent_launchpad.launch.executable', return_value=['/fake/codex']), \
+             patch('agent_launchpad.launch.subprocess.call', side_effect=interrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                launch(self.catalog, before, 'codex')
+        after = self.catalog.find(self.project.id)
+        self.assertEqual(after.sessions['codex'].native_id, 'interrupted-work')
+        self.assertEqual(after.status, 'Active')
+        self.assertEqual(last_agent(after), 'Codex')
+
+    def test_unknown_transcript_preserves_metadata_instead_of_reopening(self):
+        import sqlite3
+        codex(self.paths.codex, [('unknown', 'Known project name', str(self.root), 200, None, 0, None)])
+        project = self.catalog.find('codex:unknown')
+        self.catalog.toggle_completed(project)
+        before = self.catalog.find(project.id)
+        def run(_args, **_kwargs):
+            with sqlite3.connect(self.paths.codex / 'state_5.sqlite') as db:
+                db.execute("UPDATE threads SET updated_at = 600, title = 'Resume This Project' WHERE id = 'unknown'")
+            return 0
+        with patch('agent_launchpad.launch.executable', return_value=['/fake/codex']), \
+             patch('agent_launchpad.launch.subprocess.call', side_effect=run):
+            launch(self.catalog, before, 'codex')
+        after = self.catalog.find(project.id)
+        self.assertEqual(after.title, before.title)
+        self.assertEqual(after.updated, before.updated)
+        self.assertEqual(after.status, 'Completed')
+        self.assertTrue(any('activity is unavailable' in warning for warning in self.catalog.warnings))
+
+    def test_partial_transcript_retains_known_activity_until_complete(self):
+        self.run_visit('copilot')
+        self.catalog.toggle_completed(self.catalog.find(self.project.id))
+        before = self.catalog.find(self.project.id)
+        file = before.sessions['copilot'].transcript
+        with file.open('a') as stream:
+            stream.write('{"type":"user.message","data":{"content":"Review the design"')
+        after = self.catalog.find(self.project.id)
+        self.assertEqual(after.status, 'Completed')
+        self.assertEqual(last_agent(after), 'Claude Code')
+        with file.open('a') as stream:
+            stream.write('}}\n')
+        after = self.catalog.find(self.project.id)
+        self.assertEqual(after.status, 'Active')
+        self.assertEqual(last_agent(after), 'GitHub Copilot')
+        self.assertEqual(after.title, 'Review the design')
+
+    def test_claude_and_copilot_use_real_request_for_automatic_title(self):
+        for agent in ('copilot', 'claude'):
+            with self.subTest(agent=agent):
+                with tempfile.TemporaryDirectory() as folder:
+                    config = replace(paths(Path(folder)), copilot=Path(folder) / 'copilot')
+                    codex(config.codex, [('source', 'Old name', folder, 100, None, 0, None)])
+                    catalog = Catalog(config)
+                    project = catalog.find('codex:source')
+                    def run(args, **_kwargs):
+                        if agent == 'claude':
+                            file = claude(config.claude, args[2], Path(folder))
+                            events = [dict(type='user', cwd=folder, sessionId=args[2],
+                                           message=dict(content=text))
+                                      for text in (args[-1], 'Improve payment retries')]
+                        else:
+                            file = config.copilot / 'session-state' / args[2] / 'events.jsonl'
+                            file.parent.mkdir(parents=True)
+                            events = [dict(type='session.start', data=dict(sessionId=args[2],
+                                           context=dict(cwd=folder)))]
+                            events += [dict(type='user.message', data=dict(content=text))
+                                       for text in (args[-1], 'Improve payment retries')]
+                        file.write_text('\n'.join(json.dumps(event) for event in events) + '\n')
+                        return 0
+                    with patch('agent_launchpad.launch.executable', return_value=['/fake/' + agent]), \
+                         patch('agent_launchpad.launch.subprocess.call', side_effect=run):
+                        launch(catalog, project, agent)
+                    self.assertEqual(catalog.find(project.id).title, 'Improve payment retries')
+
     def test_old_bootstrap_only_link_uses_origin_title_and_agent(self):
         self.write_session('codex', 'old', handoff_prompt(self.root / 'handoff.md'))
         with self.catalog.store.edit() as state:

@@ -58,6 +58,7 @@ class Store:
                 not isinstance(k, str) or not isinstance(v, dict)
                 or not isinstance(v.get('signature'), str)
                 or not isinstance(v.get('updated'), (int, float))
+                or not isinstance(v.get('title', ''), str)
                 for k, v in idle.items()
             ):
                 raise ValueError(f"Invalid idle-session baseline in {path}")

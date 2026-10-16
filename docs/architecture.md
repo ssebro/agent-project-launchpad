@@ -112,7 +112,11 @@ An automatic handoff prompt and its assistant replies are setup, not new user
 work. Native session links are retained for resume, but an unchanged user-request
 fingerprint keeps the previous activity timestamp (zero for an unused new link).
 Later user requests, including ones made outside the launcher, invalidate that
-baseline. Missing transcripts remain unknown rather than proving an empty visit.
+baseline. Missing, unreadable, empty, or partially written transcripts remain
+unknown rather than proving an empty visit or new work. Unknown evidence preserves
+last-known activity and completion metadata with a discovery warning. Exit
+reconciliation runs in `finally`, so Ctrl-C still associates an unambiguous new
+Codex session and records any real requests made before interruption.
 Only launcher metadata changes; native conversations are never rewritten.
 
 An explicit display name takes precedence. Otherwise the most recent descriptive

@@ -28,12 +28,15 @@ def user_activity(session: Session) -> str | None:
     if file is None:
         return None
     digest = hashlib.sha256()
+    saw_user_text = False
     try:
         with Path(file).open(encoding='utf-8') as stream:
             for line in stream:
                 try:
                     event = json.loads(line)
                 except ValueError:
+                    if line.strip():
+                        return None  # Partial/corrupt evidence cannot prove an empty visit.
                     continue
                 if not isinstance(event, dict) or event.get('isSidechain') or event.get('agentId'):
                     continue
@@ -51,6 +54,8 @@ def user_activity(session: Session) -> str | None:
                     if isinstance(data, dict):
                         text = extract_text(data.get('content'))
                 text = text.strip()
+                if text:
+                    saw_user_text = True
                 if not text or text.startswith((
                     '[Agent Project Launchpad handoff]',
                     'Resume this project. First read the shared handoff at ',
@@ -62,4 +67,4 @@ def user_activity(session: Session) -> str | None:
                 digest.update(str(len(value)).encode('ascii') + b':' + value)
     except (OSError, UnicodeError):
         return None
-    return digest.hexdigest()
+    return digest.hexdigest() if saw_user_text else None
