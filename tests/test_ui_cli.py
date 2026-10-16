@@ -1,4 +1,5 @@
 import contextlib
+import curses
 import io
 import json
 import tempfile
@@ -56,7 +57,7 @@ class UITests(unittest.TestCase):
     def test_arrow_navigation_and_column_order(self):
         import curses
 
-        screen = Screen([curses.KEY_DOWN, "\n"])
+        screen = Screen([curses.KEY_DOWN, curses.KEY_DOWN, "\n"])
         result = choose(screen, self.catalog, "codex")
         self.assertEqual(result.project.id, "codex:two")
         header = {text: x for y, x, text, _style in screen.lines if y == 4}
@@ -67,36 +68,50 @@ class UITests(unittest.TestCase):
         self.assertIsNone(self.choose(["n"]).project)
         self.assertEqual(self.choose(["\t", "\t", "n"]).agent, "copilot")
 
+    def test_new_is_first_and_default_without_project_actions(self):
+        for agent in ("codex", "claude", "copilot"):
+            screen = Screen(["\n"])
+            result = choose(screen, self.catalog, agent)
+            self.assertIsNone(result.project)
+            self.assertEqual(result.agent, agent)
+            self.assertTrue(any(y == 6 and text == 'New conversation'
+                                for y, _x, text, _style in screen.lines))
+        before = [(p.id, p.title, p.status) for p in self.catalog.load()]
+        result = self.choose(['d', 'a', 'c', 'r', 's', '\n'])
+        self.assertIsNone(result.project)
+        self.assertEqual(before, [(p.id, p.title, p.status) for p in self.catalog.load()])
+        self.assertEqual(self.choose([curses.KEY_UP, '\n']).project.id, 'codex:two')
+
     def test_search_does_not_trigger_new_shortcut(self):
         result = self.choose(["/", "S", "e", "c", "o", "n", "d", "\n", "\n"])
         self.assertEqual(result.project.title, "Second")
 
     def test_forget_confirmation_and_undo(self):
-        result = self.choose(["d", "y", "\n"])
+        result = self.choose([curses.KEY_DOWN, "d", "y", "\n"])
         self.assertEqual(result.project.id, "codex:two")
-        result = self.choose(["u", "\n"])
+        result = self.choose([curses.KEY_DOWN, "u", "\n"])
         self.assertEqual(result.project.id, "codex:one")
-        self.assertEqual(self.choose(["d", "n", "\n"]).project.id, "codex:one")
+        self.assertEqual(self.choose([curses.KEY_DOWN, "d", "n", "\n"]).project.id, "codex:one")
 
     def test_rename_and_status(self):
-        result = self.choose(["r", '\x15', *"Readable name", "\n", "c", "\n"])
+        result = self.choose([curses.KEY_DOWN, "r", '\x15', *"Readable name", "\n", "c", "\n"])
         self.assertEqual(result.project.title, "Readable name")
         self.assertEqual(result.project.status, "Completed")
 
     def test_archive_shortcut_and_undo(self):
-        result = self.choose(['a', '\n'])
+        result = self.choose([curses.KEY_DOWN, 'a', '\n'])
         self.assertEqual(result.project.id, 'codex:two')
-        result = self.choose(['u', '\n'])
+        result = self.choose([curses.KEY_DOWN, 'u', '\n'])
         self.assertEqual(result.project.id, 'codex:one')
 
     def test_summary_shortcut_does_not_change_lifecycle(self):
-        result = self.choose(['s'])
+        result = self.choose([curses.KEY_DOWN, 's'])
         self.assertEqual(result.action, 'review')
         self.assertEqual(result.project.status, 'Active')
         self.assertEqual(self.catalog.find(result.project.id).status, 'Active')
 
     def test_rename_starts_with_existing_name(self):
-        result = self.choose(['r', *' draft', '\n', '\n'])
+        result = self.choose([curses.KEY_DOWN, 'r', *' draft', '\n', '\n'])
         self.assertEqual(result.project.title, 'First draft')
 
     def test_search_opens_with_one_enter_and_supports_arrows(self):
@@ -112,16 +127,16 @@ class UITests(unittest.TestCase):
         self.assertEqual(result.agent, 'claude')
 
     def test_help_returns_to_same_selection(self):
-        result = self.choose(['?', 'x', '\n'])
+        result = self.choose([curses.KEY_DOWN, '?', 'x', '\n'])
         self.assertEqual(result.project.id, 'codex:one')
 
     def test_empty_small_and_narrow_screens(self):
         for project in self.catalog.load():
             self.catalog.forget(project)
-        self.assertIsNone(self.choose(["\n", "q"]))
+        self.assertIsNone(self.choose(["\n"]).project)
         self.assertIsNone(self.choose(["n"], (8, 30)).project)
         self.catalog.store.restore()
-        self.assertIsNotNone(self.choose(["\n"], (24, 60)).project)
+        self.assertIsNotNone(self.choose([curses.KEY_DOWN, "\n"], (24, 60)).project)
 
     def test_wide_unicode_and_escape_characters(self):
         self.assertLessEqual(text_width(fit("日本語のプロジェクト", 10)), 10)
@@ -145,10 +160,13 @@ class UITests(unittest.TestCase):
         project.sessions['copilot'] = Session('copilot', 'older', 'First', None, 150)
         for width in (80, 100, 120):
             screen = Screen([], (24, width))
-            render(screen, [project], 0, 1, 'codex', '', False, '', Theme())
+            theme = Theme(previous_agent=123)
+            render(screen, [project], 0, 1, 'codex', '', False, '', theme)
             texts = [text for _y, _x, text, _style in screen.lines]
             self.assertIn('Continue with Codex', texts)
-            self.assertIn('Previously worked on with Claude Code', texts)
+            self.assertIn('Last used: ', texts)
+            self.assertTrue(any(text == 'Claude Code' and style == theme.previous_agent
+                                for _y, _x, text, style in screen.lines))
             self.assertNotIn('LAST AGENT', texts)
 
     def test_status_palette_and_no_color(self):

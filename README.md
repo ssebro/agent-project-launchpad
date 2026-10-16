@@ -32,7 +32,10 @@ codex        # Open it with Codex selected
 gh copilot   # Open it with GitHub Copilot selected
 ```
 
-Choose a project with ↑/↓ and press Enter, or press `n` to start something new.
+“New conversation” is selected first: press Enter for a fresh session in your
+current directory. Use ↑/↓ and Enter to resume a saved project. Press `n` to
+start fresh from anywhere in the list. Resume prompts include the project's
+name and saved summary when available.
 
 `setup` enables the picker for your normal commands in bash/zsh and backs up
 the startup file it changes. You only need to run it once.
@@ -54,7 +57,7 @@ no model requests, and leaves your existing sessions alone.
 
 | Key | Action |
 | --- | --- |
-| `↑` / `↓`, `Enter` | Select and continue a project |
+| `↑` / `↓`, `Enter` | Start a new conversation or resume a saved project |
 | `Tab` | Change the agent to continue with |
 | `n` | Start something new |
 | `/` | Search |

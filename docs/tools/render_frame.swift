@@ -5,7 +5,7 @@ import Foundation
 let args = CommandLine.arguments
 let cells = try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: args[1]))) as! [[Any]]
 let boldMask = Int(args[3])!
-let columns = 100, rows = 23
+let columns = 100, rows = 24
 let cellWidth = 10.0, cellHeight = 22.0, padding = 18.0, scale = 2.0
 let width = Double(columns) * cellWidth + padding * 2
 let height = Double(rows) * cellHeight + padding * 2
@@ -17,7 +17,7 @@ func color(_ hex: UInt32) -> NSColor {
 let background = color(0x101820), foreground = color(0xE5EDF3)
 let colors = [1: color(0x67D8EF), 2: color(0xA0AFBC), 3: foreground,
               4: background, 5: color(0x8CD8A0), 6: color(0xE8C47A),
-              7: color(0xFF8B8B), 8: color(0xD5A3ED)]
+              7: color(0xFF8B8B), 8: color(0xD5A3ED), 9: foreground]
 let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(width * scale),
     pixelsHigh: Int(height * scale), bitsPerSample: 8, samplesPerPixel: 4,
     hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0,
@@ -34,8 +34,8 @@ for cell in cells {
     let style = attributes & ~boldMask
     let x = padding + Double(column) * cellWidth
     let y = height - padding - Double(row + 1) * cellHeight
-    if style == 3 || style == 4 {
-        (style == 3 ? color(0x234C88) : color(0x67D8EF)).setFill()
+    if style == 3 || style == 4 || style == 9 {
+        (style == 3 ? color(0x234C88) : style == 9 ? color(0x713A83) : color(0x67D8EF)).setFill()
         NSRect(x: x, y: y, width: cellWidth, height: cellHeight).fill()
     }
     let font = NSFont.monospacedSystemFont(ofSize: 16,

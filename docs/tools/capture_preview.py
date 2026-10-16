@@ -18,7 +18,7 @@ class Frame:
     """Record the same cell writes curses receives, including overwritten cells."""
 
     def getmaxyx(self):
-        return 23, 100
+        return 24, 100
 
     def erase(self):
         self.cells = {}
@@ -34,14 +34,15 @@ class Frame:
 def main():
     # Small style IDs stand in for terminal-specific curses color-pair values.
     theme = Theme(accent=1, muted=2, selected=3, key=4, success=5,
-                  warning=6, danger=7, ready=8)
+                  warning=6, danger=7, ready=8, previous_agent=7,
+                  new_entry=8, new_selected=9)
     with tempfile.TemporaryDirectory(prefix='launchpad-preview-') as folder:
         root = Path(folder)
         catalog = demo_catalog(root)
         projects = catalog.load()
         projects[0].summary = 'Picker implemented; review changes and publish the release.'
         frame = Frame()
-        render(frame, projects, 0, len(projects), 'claude', '', False,
+        render(frame, [None, *projects], 1, len(projects), 'claude', '', False,
                'DEMO · Fictional projects · No agents or model requests', theme)
         data = root / 'frame.json'
         data.write_text(json.dumps(list(frame.cells.values())))
