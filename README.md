@@ -65,7 +65,8 @@ no model requests, and leaves your existing sessions alone.
 | `?`, `Esc` | Help / cancel |
 
 Projects start Active automatically. New conversation activity reopens completed
-work. Archiving keeps the original history and can be undone.
+work. Opening an agent and leaving without a new request keeps the project’s
+name, last agent, date, and completion status. Archiving keeps the original history and can be undone.
 
 ## What carries over?
 

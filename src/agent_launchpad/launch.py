@@ -6,6 +6,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from .activity import EMPTY_ACTIVITY, user_activity
 from .context import create_packet
 from .discovery import discover_claude, discover_codex, discover_copilot
 from .models import AGENTS, Project
@@ -14,11 +15,12 @@ from .projects import Catalog
 
 def handoff_prompt(file: Path, packet: Path | None = None) -> str:
     return (
-        f"Resume this project. First read the shared handoff at {file}. "
+        f"[Agent Project Launchpad handoff]\nResume this project. First read the shared handoff at {file}. "
         + (f"Also read the freshly generated context packet at {packet}; it records recent dialogue, "
            "source timestamps, and context gaps. Reconcile the latest evidence with the handoff. "
            if packet else '') +
-        "Read the source files it identifies where needed. Your native conversation may be "
+        "Read the source files it identifies where needed. Wait for the user’s next request "
+        "before changing project files or continuing work. Your native conversation may be "
         "older than the handoff; reconcile differences before acting. Keep this handoff updated "
         "with Status, findings, decisions, changed files, validation, and next steps before "
         "finishing each turn. Do not claim to know the other tool's history unless you read it."
@@ -71,10 +73,6 @@ def launch(catalog: Catalog, project: Project | None, agent: str) -> int:
     # while an interactive agent runs, which could take hours.
     with catalog.store.edit() as state:
         record = state["projects"].setdefault(project.id, {})
-        record["lifecycle"] = "active"
-        record["hidden"] = False
-        record.pop("completed_updates", None)
-        state["forgotten"] = [i for i in state["forgotten"] if i != project.id]
         links = record.setdefault("sessions", {})
         links.update({a: s.native_id for a, s in project.sessions.items()})
         native_id = links.get(agent)
@@ -100,6 +98,8 @@ def launch(catalog: Catalog, project: Project | None, agent: str) -> int:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise ValueError(f"This project is already open through this launcher in {agent}.") from exc
+        previous = project.sessions.get(agent)
+        previous_signature = user_activity(previous) if previous else EMPTY_ACTIVITY
         packet = create_packet(catalog, catalog.find(project.id))
         returncode = subprocess.call(
             build_command(binary, agent, native_id, file, new_id, packet), cwd=directory,
@@ -128,4 +128,27 @@ def launch(catalog: Catalog, project: Project | None, agent: str) -> int:
                 else:
                     print("Could not uniquely link the new Codex conversation. "
                           "The handoff is preserved; native history remains available.")
+        # Keep native links for future resume, but a bootstrap-only visit must
+        # not claim recency, reopen completed work, or stale a saved summary.
+        current = catalog.find(project.id).sessions.get(agent)
+        signature = user_activity(current) if current else None
+        idle = current is None or (signature is not None and signature == previous_signature)
+        with catalog.store.edit() as state:
+            record = state["projects"].setdefault(project.id, {})
+            if idle:
+                if current:
+                    record.setdefault('idle_sessions', {})[current.key] = {
+                        'signature': signature, 'updated': previous.updated if previous else 0,
+                    }
+                if file.exists():
+                    record['idle_handoff_mtime'] = file.stat().st_mtime
+                    record['idle_handoff_updated'] = project.updated
+            elif current:
+                record.get('idle_sessions', {}).pop(current.key, None)
+                record.pop('idle_handoff_mtime', None)
+                record.pop('idle_handoff_updated', None)
+                record["lifecycle"] = "active"
+                record["hidden"] = False
+                record.pop("completed_updates", None)
+                state["forgotten"] = [i for i in state["forgotten"] if i != project.id]
     return returncode

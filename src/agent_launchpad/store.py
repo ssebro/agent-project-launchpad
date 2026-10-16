@@ -53,6 +53,17 @@ class Store:
                 not isinstance(k, str) or not isinstance(v, str) for k, v in sessions.items()
             ):
                 raise ValueError(f"Invalid session links in {path}")
+            idle = project.get('idle_sessions', {})
+            if not isinstance(idle, dict) or any(
+                not isinstance(k, str) or not isinstance(v, dict)
+                or not isinstance(v.get('signature'), str)
+                or not isinstance(v.get('updated'), (int, float))
+                for k, v in idle.items()
+            ):
+                raise ValueError(f"Invalid idle-session baseline in {path}")
+            if any(not isinstance(project.get(key, 0), (int, float))
+                   for key in ('idle_handoff_mtime', 'idle_handoff_updated')):
+                raise ValueError(f"Invalid idle-handoff baseline in {path}")
             lifecycle = project.get('lifecycle', 'active')
             if lifecycle not in ('active', 'completed', 'archived'):
                 raise ValueError(f"Invalid project lifecycle in {path}")
