@@ -11,7 +11,7 @@ to continue. Your existing conversations appear automatically, including project
 you worked on with another agent. The preview shows who you last used;
 “Continue with” shows who will pick up the work.
 
-![Agent Project Launchpad picker showing projects, lifecycle status, agent switching, and keyboard controls](https://raw.githubusercontent.com/ssebro/agent-project-launchpad/v1.0.0/docs/preview.png)
+![Agent Project Launchpad picker showing projects, lifecycle status, agent switching, and keyboard controls](https://raw.githubusercontent.com/ssebro/agent-project-launchpad/v1.0.1/docs/preview.png)
 
 *The actual picker renderer with fictional demo projects.*
 
@@ -42,7 +42,7 @@ the startup file it changes. You only need to run it once.
 Check the installation with `agent-launchpad check-shell`.
 
 Need [pipx](https://pipx.pypa.io/) or prefer a virtual environment?
-See the [installation guide](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/guide.md#install).
+See the [installation guide](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/docs/guide.md#install).
 
 ## Try the demo
 
@@ -80,7 +80,7 @@ original agents. Context excerpts are bounded; important gaps still need review.
 
 Data stays on your Mac or Linux machine until an agent reads it as model context.
 Summaries use your existing agent account and normal usage. Nothing runs in the
-background. [Details and privacy](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/SECURITY.md).
+background. [Details and privacy](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/SECURITY.md).
 
 ## Uninstall
 
@@ -94,5 +94,5 @@ Use `--dry-run` to preview, or `--shell bash` / `--shell zsh` to choose a shell.
 If you set up both shells, uninstall their integration before removing the package.
 `uninstall-shell` remains available for removing only shell integration.
 
-[User guide](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/guide.md) · [Troubleshooting](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/compatibility.md) ·
-[Contributing](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/CONTRIBUTING.md) · [Architecture](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/architecture.md) · [MIT license](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/LICENSE)
+[User guide](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/docs/guide.md) · [Troubleshooting](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/docs/compatibility.md) ·
+[Contributing](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/CONTRIBUTING.md) · [Architecture](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/docs/architecture.md) · [MIT license](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.1/LICENSE)
