@@ -1,9 +1,12 @@
+import contextlib
+import io
 import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from agent_launchpad.cli import main
 from agent_launchpad.integration import START, configure, shell_name, startup_file
 
 
@@ -43,6 +46,35 @@ class SetupTests(unittest.TestCase):
         result = configure('bash', self.rc, None, remove=True)
         self.assertTrue(result.changed)
         self.assertEqual(self.rc.read_text(), original + 'export AFTER=2\n')
+
+    def invoke_uninstall(self, *options):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(['uninstall', '--shell', 'bash', '--rc-file', str(self.rc), *options])
+        return code, output.getvalue()
+
+    def test_uninstall_command_preserves_user_config_and_data_and_is_repeatable(self):
+        self.rc.write_text('export USER_SETTING=1\n')
+        configure('bash', self.rc, self.launcher)
+        notes = self.root / 'notes.md'
+        notes.write_text('Saved work')
+        code, output = self.invoke_uninstall()
+        self.assertEqual(code, 0)
+        self.assertEqual(self.rc.read_text(), 'export USER_SETTING=1\n')
+        self.assertEqual(notes.read_text(), 'Saved work')
+        self.assertIn('Backup:', output)
+        self.assertIn('pipx uninstall agent-project-launchpad', output)
+        self.assertIn('package is still installed', output)
+        self.assertIn('Already removed:', self.invoke_uninstall()[1])
+
+    def test_uninstall_command_dry_run_leaves_managed_block_untouched(self):
+        configure('bash', self.rc, self.launcher)
+        before = self.rc.read_bytes()
+        code, output = self.invoke_uninstall('--dry-run')
+        self.assertEqual(code, 0)
+        self.assertIn('Would remove integration', output)
+        self.assertNotIn('To finish removing', output)
+        self.assertEqual(self.rc.read_bytes(), before)
 
     def test_dry_run_does_not_create_files_or_parent_directories(self):
         rc = self.root / 'missing' / '.bashrc'

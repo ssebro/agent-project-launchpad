@@ -82,7 +82,17 @@ Data stays on your Mac or Linux machine until an agent reads it as model context
 Summaries use your existing agent account and normal usage. Nothing runs in the
 background. [Details and privacy](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/SECURITY.md).
 
-To remove startup integration, run `agent-launchpad uninstall-shell`.
+## Uninstall
+
+Run `agent-launchpad uninstall` to remove shell integration (with a backup).
+Open a new Terminal, then remove the package with
+`pipx uninstall agent-project-launchpad`. For a pip/venv install, run
+`python -m pip uninstall agent-project-launchpad` in that environment instead.
+Saved launcher notes and native agent histories are kept.
+
+Use `--dry-run` to preview, or `--shell bash` / `--shell zsh` to choose a shell.
+If you set up both shells, uninstall their integration before removing the package.
+`uninstall-shell` remains available for removing only shell integration.
 
 [User guide](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/guide.md) · [Troubleshooting](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/compatibility.md) ·
 [Contributing](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/CONTRIBUTING.md) · [Architecture](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/docs/architecture.md) · [MIT license](https://github.com/ssebro/agent-project-launchpad/blob/v1.0.0/LICENSE)

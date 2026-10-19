@@ -238,10 +238,18 @@ need separate agent configuration as well as separate launcher data directories.
 
 ## Uninstall
 
-Run `agent-launchpad uninstall-shell` and open a new shell,
+Run `agent-launchpad uninstall` to remove the managed startup block (a backup is
+created) and show the remaining package removal steps. Open a new shell,
 then run `pipx uninstall agent-project-launchpad` (or delete your dedicated virtual
 environment). Your native sessions are unaffected. Launcher data is deliberately
 retained; remove its data directory separately if you no longer want the notes.
+
+`agent-launchpad uninstall --dry-run` previews without writing files.
+Use `--shell bash` or `--shell zsh` for a specific shell, or `--rc-file PATH`
+for a custom startup file. If you enabled both shells, remove both integrations
+before removing the package. Existing terminals keep their loaded functions until
+you open a new Terminal. `uninstall-shell` continues to remove only the managed
+startup block.
 
 ## Development
 

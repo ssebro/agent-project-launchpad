@@ -30,6 +30,7 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("doctor", help="Show tool paths, data locations, and discovery warnings")
     commands.add_parser('demo', help='Try the real picker with fictional projects and no model calls')
     for name, help_text in [('setup', 'Enable the picker for your normal agent commands'),
+                            ('uninstall', 'Remove shell integration and show package removal steps'),
                             ('uninstall-shell', 'Remove managed shell integration; keep session data'),
                             ('check-shell', 'Verify the picker loads in a fresh interactive shell')]:
         setup = commands.add_parser(name, help=help_text)
@@ -83,7 +84,7 @@ def run(args: argparse.Namespace) -> int:
     if args.command == "shell-init":
         print(shell_init(args.launcher))
         return 0
-    if args.command in ('setup', 'uninstall-shell', 'check-shell'):
+    if args.command in ('setup', 'uninstall', 'uninstall-shell', 'check-shell'):
         from .integration import (
             check_shell,
             configure,
@@ -103,7 +104,7 @@ def run(args: argparse.Namespace) -> int:
                 return 1
         else:
             path = args.rc_file or startup_file(shell)
-            removing = args.command == 'uninstall-shell'
+            removing = args.command in ('uninstall', 'uninstall-shell')
             result = configure(shell, path, None if removing else installed_launcher(),
                                remove=removing, dry_run=args.dry_run)
             if args.dry_run:
@@ -117,6 +118,13 @@ def run(args: argparse.Namespace) -> int:
                 print('Open a new Terminal.' if removing else
                       'Open a new Terminal, then type codex, claude, copilot, or gh copilot.\n'
                       'Verify startup with: agent-launchpad check-shell')
+            if args.command == 'uninstall' and not args.dry_run:
+                print('Saved launcher notes and native agent histories are kept.\n'
+                      'The package is still installed. To finish removing it, use your installation method:\n'
+                      '  pipx: pipx uninstall agent-project-launchpad\n'
+                      '  pip/venv: run python -m pip uninstall agent-project-launchpad in that environment.\n'
+                      'If you enabled other shells, remove their integration first with\n'
+                      '  agent-launchpad uninstall --shell bash (or --shell zsh).')
         return 0
     if args.command == 'demo':
         from .demo import run_demo
