@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — 2026-10-19
+
+- Add a discoverable `agent-launchpad uninstall` command that removes managed
+  shell integration with a backup and explains pipx or pip/venv package removal.
+- Document dry runs, custom startup files, and removing integration from multiple
+  shells while preserving saved notes and native agent histories.
+
 ## 1.0.0 — 2026-10-16
 
 - Preserve project names and activity metadata when a resumed agent only reads its automatic handoff.

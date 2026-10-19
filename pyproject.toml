@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-project-launchpad"
-version = "1.0.0"
+version = "1.0.1"
 description = "A project launcher and shared context for Codex, Claude Code, and GitHub Copilot CLI."
 readme = "README.md"
 requires-python = ">=3.10"
