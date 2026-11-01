@@ -56,7 +56,7 @@ jobs:
           name: distributions
           path: dist/
       - name: Publish verified distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.14.2
+        uses: pypa/gh-action-pypi-publish@v1.14.3
 
   github-release:
     needs: [build, pypi]
